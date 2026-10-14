@@ -30,9 +30,13 @@ The second command downloads and installs the Release directly. Continue only af
 ## Features and privacy
 
 - Task animations for reading, typing, thinking, searching, checking and completion, with local idle roaming.
-- Twelve pixel themes with day/dusk variants, seven built-in characters, and local character/background imports.
+- Twelve pixel themes with day/dusk variants, the native Deep seek character, six tribute characters, and both pixel and HD whale-girl forms, plus local character/background imports.
+- A pixel/HD toggle reveals the new form with a 650 ms sci-fi scan while keeping the current task and scene. Reduced-motion settings switch forms directly.
+- Thirteen HD actions use eight 125 ms frames each. Testing scans a chip, building assembles modules, Git manipulates branch nodes, and collaboration keeps two solid 45%-size clones working beside the main character. The pixel form retains its existing artwork and compatible action fallbacks.
 - Collapsible controls, narrow-window layouts and support for reduced motion.
 - Optional dynamic mode generates Chinese text bubbles and combines existing scene assets, with fallback and separate token accounting.
+
+The dual forms and revised native Deep seek walk are part of the 0.1.26 source changes. The public download above remains the 0.1.24 release; use the [source installation guide](docs/development.md#从源码安装) to build the new version. Historical screenshots retain their original version labels.
 
 > [!IMPORTANT]
 > **Dynamic mode sends task summaries to your configured model and adds model usage.** Summaries may include tool names, paths, commands, search terms, URLs or a short excerpt of user input. Default preset mode plays locally and makes no extra model requests for the animation.
@@ -42,6 +46,8 @@ Dynamic mode uses your session's provider/model unless overridden. It also sends
 ## Customize and develop
 
 Use the “本地资源” (local resources) panel to select a character or import ZIP/embedded-image JSON packs. Character and scene selections are independent. See [resource pack format](docs/local-resource-packs.md), [dynamic mode](docs/dynamic-scenes.md), [development notes](docs/development.md), [Windows auto-update](docs/desktop-auto-update.md) and [CHANGELOG](CHANGELOG.md). Detailed guides are currently in Chinese.
+
+An unset character selection starts with the pixel whale girl. Select either whale-girl form to show the pixel/HD buttons. Selecting “默认 · Deep seek” keeps the original blue-eyed, blue-and-white maid character across refreshes; its revised walk reuses the idle artwork without changing body or shoe proportions. “恢复默认” returns to the pixel whale girl and preset scenes. See [walking assets](design/character-walks.md) and [dual-form actions](design/whale-dual-forms.md).
 
 After `npm ci`, run `npm run typecheck`, `npm test` or `npm run preview`. The preview at `http://127.0.0.1:3088/` uses simulated dynamic scenes without model calls.
 
