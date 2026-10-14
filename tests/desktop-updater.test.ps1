@@ -217,12 +217,79 @@ try {
     Assert-True ($setupConfig.RepositoryUrl -eq $remotePath -and $setupConfig.Branch -eq 'main' -and $setupConfig.MinimumVersion -eq '0.1.18') 'Setup persists the requested repository and installed version floor'
     Assert-True ($setupConfig.DshHome -eq $dshHome -and $setupConfig.DshCommand -eq $mockDshPath -and $setupConfig.StateDirectory -eq $setupStateRoot) 'Setup persists isolated absolute profile, command and state paths'
     Assert-True ($registration.Name -eq 'Toons-Isolated-Fixture' -and $registration.Force) 'Setup registers the requested task name'
-    Assert-True ($registration.Task.Action.Execute -eq $powershellCommand -and $registration.Task.Action.WorkingDirectory -eq $setupStateRoot) 'Scheduled action uses Windows PowerShell and its state directory'
-    Assert-True ($registration.Task.Action.Argument.Contains('-File "' + $updater + '"') -and $registration.Task.Action.Argument.Contains('-ConfigPath "' + (Join-Path $setupStateRoot 'config.json') + '"')) 'Scheduled action quotes the updater and configuration paths'
+    $launcherPath = $registration.Task.Action.Execute
+    Assert-True ((Test-Path -LiteralPath $launcherPath -PathType Leaf) -and $launcherPath -like (Join-Path $setupStateRoot 'toons-updater-*.exe') -and $registration.Task.Action.WorkingDirectory -eq $setupStateRoot) 'Scheduled action uses the compiled background launcher and its state directory'
+    Assert-True ($registration.Task.Action.Argument -eq ('"' + $updater + '" "' + (Join-Path $setupStateRoot 'config.json') + '"')) 'Scheduled action quotes the updater and configuration paths'
+    $launcherBytes = [IO.File]::ReadAllBytes($launcherPath)
+    $peOffset = [BitConverter]::ToInt32($launcherBytes, 0x3c)
+    Assert-True ([BitConverter]::ToUInt16($launcherBytes, $peOffset + 24 + 68) -eq 2) 'Launcher is a Windows GUI executable that never allocates a console'
     Assert-True (@($registration.Task.Trigger).Count -eq 2 -and $registration.Task.Trigger[0].Once -and $registration.Task.Trigger[0].RepetitionMinutes -eq 15 -and $registration.Task.Trigger[1].AtLogOn) 'Setup requests recurring and logon triggers'
     $userId = [Security.Principal.WindowsIdentity]::GetCurrent().Name
     Assert-True ($registration.Task.Principal.UserId -eq $userId -and $registration.Task.Principal.LogonType -eq 'Interactive' -and $registration.Task.Principal.RunLevel -eq 'Limited' -and $registration.Task.Trigger[1].User -eq $userId) 'Setup uses the current user without elevation or stored credentials'
     Assert-True ($registration.Task.Settings.MultipleInstances -eq 'IgnoreNew' -and $registration.Task.Settings.Hidden -and $registration.Task.Settings.ExecutionMinutes -eq 30 -and $registration.Task.Settings.StartWhenAvailable -and $registration.Task.Settings.AllowStartIfOnBatteries -and $registration.Task.Settings.DontStopIfGoingOnBatteries) 'Setup requests background execution and prevents overlapping task instances'
+
+    # Inspect actual console handles, rather than just checking hidden flags.
+    # The old Task Scheduler action allocated a console before hiding it.
+    $consoleScript = Join-Path $fixtureRoot 'console probe.ps1'
+    $consoleResult = Join-Path $fixtureRoot 'console result.json'
+    @'
+param([string]$ConfigPath)
+Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class ConsoleProbe { [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow(); }'
+@{ console = [ConsoleProbe]::GetConsoleWindow().ToInt64(); config = $ConfigPath } | ConvertTo-Json | Set-Content -LiteralPath $ConfigPath -Encoding UTF8
+[Console]::Error.WriteLine('Fixture launcher failure diagnostics')
+exit 7
+'@ | Set-Content -LiteralPath $consoleScript -Encoding UTF8
+    $probeArguments = '-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}" -ConfigPath "{1}"' -f $consoleScript, $consoleResult
+    Start-Process -FilePath $powershellCommand -ArgumentList $probeArguments -WindowStyle Hidden -Wait
+    Assert-True ((Get-Content -LiteralPath $consoleResult -Raw | ConvertFrom-Json).console -ne 0) 'Regression control: hiding PowerShell still allocates a console'
+    $probeProcess = Start-Process -FilePath $launcherPath -ArgumentList ('"{0}" "{1}"' -f $consoleScript, $consoleResult) -WindowStyle Hidden -PassThru -Wait
+    $probeResult = Get-Content -LiteralPath $consoleResult -Raw | ConvertFrom-Json
+    Assert-True ($probeProcess.ExitCode -eq 7 -and $probeResult.console -eq 0 -and $probeResult.config -eq $consoleResult) 'Background launcher creates no PowerShell console, preserves paths and returns the child exit code'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $fixtureRoot 'launcher.log') -Raw).Contains('Fixture launcher failure diagnostics')) 'Launcher errors are written to a file without displaying a dialog'
+
+    Add-Type -TypeDefinition (Get-Content -LiteralPath (Join-Path $projectRoot 'scripts\desktop-updater-launcher.cs') -Raw)
+    $nativeDirectory = Join-Path $fixtureRoot 'native commands & (unicode) %PATH%'
+    New-Item -ItemType Directory -Path $nativeDirectory -Force | Out-Null
+    $nativeProbe = Join-Path $nativeDirectory 'console probe.exe'
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class NativeConsoleProbe {
+    [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
+    public static int Main(string[] args) {
+        Console.WriteLine("console=" + GetConsoleWindow().ToInt64());
+        foreach (string arg in args) Console.WriteLine("arg=" + Convert.ToBase64String(Encoding.UTF8.GetBytes(arg)));
+        Console.Write(new string('o', 131072));
+        Console.Error.Write(new string('e', 131072));
+        return 7;
+    }
+}
+'@ -OutputAssembly $nativeProbe -OutputType ConsoleApplication
+    $nativeArguments = @('spaces & (parentheses) %PATH%', '', 'trailing\', 'embedded"quote')
+    $nativeResult = [DesktopUpdaterProcess]::Run($nativeProbe, $nativeArguments, $fixtureRoot)
+    Assert-True ($nativeResult.ExitCode -eq 7 -and $nativeResult.Output.StartsWith('console=0') -and $nativeResult.Output.Length -gt 131072 -and $nativeResult.Error.Length -eq 131072) 'Native commands have no console and large stdout/stderr do not deadlock'
+    foreach ($argument in $nativeArguments) {
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($argument))
+        Assert-True ($nativeResult.Output.Contains('arg=' + $encoded + [Environment]::NewLine)) 'Native command arguments survive Windows quoting'
+    }
+    $batchProbe = Join-Path $nativeDirectory 'console probe.cmd'
+    @'
+@echo off
+"%~dp0console probe.exe" %*
+exit /b %errorlevel%
+'@ | Set-Content -LiteralPath $batchProbe -Encoding ASCII
+    $batchArguments = @('spaces & (parentheses) %PATH%', 'trailing\')
+    $batchResult = [DesktopUpdaterProcess]::Run($batchProbe, $batchArguments, $fixtureRoot)
+    Assert-True ($batchResult.ExitCode -eq 7 -and $batchResult.Output.StartsWith('console=0')) 'Batch launchers and their native children run without a console'
+    foreach ($argument in $batchArguments) {
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($argument))
+        Assert-True ($batchResult.Output.Contains('arg=' + $encoded + [Environment]::NewLine)) 'Batch command paths and arguments preserve literal shell metacharacters'
+    }
+    $scriptResult = [DesktopUpdaterProcess]::Run($consoleScript, @('-ConfigPath', $consoleResult), $fixtureRoot)
+    Assert-True ($scriptResult.ExitCode -eq 7 -and (Get-Content -LiteralPath $consoleResult -Raw | ConvertFrom-Json).console -eq 0) 'PowerShell script commands also run without a console'
+    & $powershellCommand -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $setupHarnessPath $setupPath $dshHome $setupStateRoot $mockDshPath $remotePath $setupResultPath
+    Assert-True ($LASTEXITCODE -eq 0 -and (Get-Content -LiteralPath $setupResultPath -Raw | ConvertFrom-Json).Task.Action.Execute -eq $launcherPath) 'Repeated setup reuses the background launcher and replaces the same task'
 
     $stateHashBeforeLock = (Get-FileHash -LiteralPath (Join-Path $stateRoot 'state.json')).Hash
     $callsBeforeLock = @(Read-Calls).Count

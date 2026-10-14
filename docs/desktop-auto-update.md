@@ -48,6 +48,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\auto-update-de
 
 ## 暂停和停用
 
+后台任务通过源码编译的 Windows GUI 启动器运行，更新检查及其 Git、npm 和安装子进程均不创建控制台窗口。移动项目目录后，请从新目录重新运行设置脚本，以更新任务、配置与工作目录；保留已被桌面 profile 引用的旧安装包，直到安装新的包。
+
 ```powershell
 Disable-ScheduledTask -TaskName DSH-Toons-AutoUpdate
 Enable-ScheduledTask -TaskName DSH-Toons-AutoUpdate

@@ -13,6 +13,7 @@ $statePath = Join-Path $stateRoot 'state.json'
 $logPath = Join-Path $stateRoot 'update.log'
 $installedManifestPath = Join-Path $config.DshHome 'profiles\desktop\node_modules\dsh-toons\package.json'
 New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
+Add-Type -TypeDefinition (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'desktop-updater-launcher.cs') -Raw)
 
 function Write-UpdateLog([string]$Message) {
     $line = '{0} {1}' -f [DateTimeOffset]::Now.ToString('o'), $Message
@@ -22,20 +23,14 @@ function Write-UpdateLog([string]$Message) {
 
 function Invoke-UpdateCommand {
     param([string]$Executable, [string[]]$CommandArguments, [switch]$Capture)
-    $previousPreference = $ErrorActionPreference
-    try {
-        # Windows PowerShell wraps native stderr in ErrorRecords, even on success.
-        $ErrorActionPreference = 'Continue'
-        $output = @(& $Executable @CommandArguments 2>&1)
-        $commandExitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousPreference
+    $result = [DesktopUpdaterProcess]::Run($Executable, $CommandArguments, (Get-Location).ProviderPath)
+    foreach ($output in @($result.Output, $result.Error)) {
+        if ($output) { Add-Content -LiteralPath $logPath -Value $output.TrimEnd() -Encoding UTF8 }
     }
-    foreach ($line in $output) { Add-Content -LiteralPath $logPath -Value $line.ToString() -Encoding UTF8 }
-    if ($commandExitCode -ne 0) {
-        throw ('{0} failed with exit code {1}; see update.log.' -f [IO.Path]::GetFileName($Executable), $commandExitCode)
+    if ($result.ExitCode -ne 0) {
+        throw ('{0} failed with exit code {1}; see update.log.' -f [IO.Path]::GetFileName($Executable), $result.ExitCode)
     }
-    if ($Capture) { return ($output | ForEach-Object { $_.ToString() }) -join "`n" }
+    if ($Capture) { return $result.Output.TrimEnd() }
 }
 
 function Get-StableVersion([string]$Value) {
