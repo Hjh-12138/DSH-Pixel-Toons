@@ -1,12 +1,20 @@
 import {strFromU8,unzipSync} from 'fflate'
 import type {Action} from './animation'
+import type {Phase} from '../engine/library'
 import {assertPackFrameScanBudget,scanPackFrameBounds,type FrameInkBounds} from './pack-frame-bounds'
 
 export const PACK_LIMITS={archive:20*1024*1024,expanded:32*1024*1024,image:8*1024*1024,manifest:128*1024,entries:32,pixels:16*1024*1024}
 export const ACTIONS:readonly Action[]=['idle','think','read','type','search','check','success','failed','walk-left','walk-right']
+export type PackAction=Action|'build'|'git'|'agents'
+export const PACK_ACTIONS:readonly PackAction[]=[...ACTIONS,'build','git','agents']
+/** Dedicated work clips extend older packs without changing their fallback actions. */
+export function workPackAction(action:Action,phase:Phase,working?:boolean):PackAction{
+  if(working===false||action==='idle'||action==='success'||action==='failed'||action.startsWith('walk-'))return action
+  return phase==='building'?'build':phase==='git'?'git':phase==='agents'?'agents':action
+}
 export type PackFrame={atlas:string;x:number;y:number;w:number;h:number;anchorX:number;anchorY:number;durationMs:number}
 export type PackClip={frames:PackFrame[];loop:boolean;stance:'standing'|'prone'}
-export type PackCharacter={atlases:Record<string,string>;referenceHeight:number;actions:Partial<Record<Action,PackClip>>&{idle:PackClip}}
+export type PackCharacter={atlases:Record<string,string>;referenceHeight:number;rendering?:'pixelated'|'smooth';actions:Partial<Record<PackAction,PackClip>>&{idle:PackClip}}
 export type PackScene={background:string;foreground?:string;fit:'cover'|'contain'|'stretch';color:string;centerX:number;footY:number;scale:number}
 export type PackManifest={format:'dsh-toons-pack';version:1;id:string;name:string;author?:string;description?:string;character?:PackCharacter;scene?:PackScene}
 export type LocalPack={id:string;manifest:PackManifest;assets:Record<string,Blob>;importedAt:number}
@@ -44,13 +52,13 @@ export function parsePackManifest(raw:unknown):PackManifest{
   if(p.character!==undefined){
     const c=record(p.character,'角色'),atlases=record(c.atlases,'角色图集'),actions=record(c.actions,'角色动作')
     if(Object.keys(atlases).length<1||Object.keys(atlases).length>8)throw new Error('角色需要 1 到 8 张图集')
-    const images:Record<string,string>=Object.create(null),clips:Partial<Record<Action,PackClip>>={}
+    const images:Record<string,string>=Object.create(null),clips:Partial<Record<PackAction,PackClip>>={}
     for(const [key,path] of Object.entries(atlases)){
       if(!/^[a-z][a-z0-9_-]{0,31}$/.test(key))throw new Error('图集名称只能包含小写字母、数字、下划线和短横线')
       images[key]=assetPath(path)
     }
     for(const [action,value] of Object.entries(actions)){
-      if(!ACTIONS.includes(action as Action))throw new Error(`不支持的动作：${action.slice(0,40)}`)
+      if(!PACK_ACTIONS.includes(action as PackAction))throw new Error(`不支持的动作：${action.slice(0,40)}`)
       const clip=record(value,`${action} 动作`)
       if(!Array.isArray(clip.frames)||clip.frames.length<1||clip.frames.length>32)throw new Error(`${action} 动作需要 1 到 32 帧`)
       if(clip.loop!==undefined&&typeof clip.loop!=='boolean')throw new Error(`${action}.loop 必须为布尔值`)
@@ -62,10 +70,14 @@ export function parsePackManifest(raw:unknown):PackManifest{
         return {atlas,x:number(f.x,'帧 X',0,4096,undefined,true),y:number(f.y,'帧 Y',0,4096,undefined,true),w,h,
           anchorX:number(f.anchorX,'水平锚点',0,w,w/2),anchorY:number(f.anchorY,'落脚锚点',0,h,h),durationMs:number(f.durationMs,'帧时长',40,10000,240)}
       })
-      clips[action as Action]={frames,loop:typeof clip.loop==='boolean'?clip.loop:action!=='success'&&action!=='failed',stance:clip.stance==='prone'?'prone':'standing'}
+      clips[action as PackAction]={frames,loop:typeof clip.loop==='boolean'?clip.loop:action!=='success'&&action!=='failed',stance:clip.stance==='prone'?'prone':'standing'}
     }
     if(!clips.idle)throw new Error('角色包必须包含 idle 待机动作')
     manifest.character={atlases:images,referenceHeight:number(c.referenceHeight,'角色参考高度',1,4096),actions:clips as PackCharacter['actions']}
+    if(c.rendering!==undefined){
+      if(c.rendering!=='pixelated'&&c.rendering!=='smooth')throw new Error('角色绘制方式必须为 pixelated 或 smooth')
+      manifest.character.rendering=c.rendering
+    }
   }
   if(p.scene!==undefined){
     const s=record(p.scene,'场景')
@@ -165,11 +177,18 @@ export async function readLocalPack(file:Blob&{name?:string}):Promise<LocalPack>
   if(bytes[0]===80&&bytes[1]===75)return packFromEntries(unpackArchive(bytes))
   return packFromJson(new TextDecoder().decode(bytes))
 }
-export function resolvePackClip(character:PackCharacter,action:Action):{clip:PackClip;action:Action;mirror:boolean}{
+export function resolvePackClip(character:PackCharacter,action:PackAction):{clip:PackClip;action:PackAction;mirror:boolean}{
   if(character.actions[action])return {clip:character.actions[action]!,action,mirror:false}
+  const legacy=action==='build'||action==='git'?'check':action==='agents'?'search':undefined
+  if(legacy&&character.actions[legacy])return {clip:character.actions[legacy]!,action:legacy,mirror:false}
   const opposite=action==='walk-left'?'walk-right':action==='walk-right'?'walk-left':undefined
   if(opposite&&character.actions[opposite])return {clip:character.actions[opposite]!,action:opposite,mirror:true}
   return {clip:character.actions.idle,action:'idle',mirror:false}
+}
+/** Imported reaction clips must finish before the character returns to work or idle. */
+export function packReactionSeconds(character:PackCharacter|undefined,outcome:string):number{
+  const clip=outcome==='success'||outcome==='failed'?character?.actions[outcome]:undefined
+  return clip?clip.frames.reduce((sum,f)=>sum+f.durationMs,0)/1000:1
 }
 export function packFrameAt(clip:PackClip,seconds:number):PackFrame{
   const total=clip.frames.reduce((sum,f)=>sum+f.durationMs,0)

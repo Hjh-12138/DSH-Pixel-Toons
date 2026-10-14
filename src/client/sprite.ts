@@ -4,8 +4,9 @@ import {cellWidth} from '../engine/text'
 import {playbackAction,frameAt,ATLAS_COLUMNS,type Action,type MotionClock} from './animation'
 import type {PixelPreset} from '../presets'
 import {paintPixelScene} from './pixel-scenes'
-import {packFrameAt,resolvePackClip,type PackResources,type LoadedScene} from './resource-pack'
+import {packFrameAt,packReactionSeconds,resolvePackClip,workPackAction,type PackResources,type LoadedScene,type LoadedCharacter,type PackClip,type PackFrame} from './resource-pack'
 import {pixelLayout} from './pixel-layout'
+import {paintFormTransition,type FormTransition,type CharacterLayer} from './form-transition'
 import type {TravelPose} from './travel'
 import {plannedAction,type SceneDirection} from '../scene-plan'
 import {paintDirection,paintDirectionBubble} from './scene-direction'
@@ -83,6 +84,8 @@ export function actionSheets(images:Record<Action,HTMLImageElement>):AnimationSp
   const sheets=Object.fromEntries(Object.entries(images).filter(([action])=>action!=='walk-right').map(([action,image])=>[action,animationSheet(image,[0,1])])) as AnimationSprites
   const referenceRatio=sheets.idle.referenceHeight/(images.idle.height/2)
   for(const [action,sheet] of Object.entries(sheets))if(!action.startsWith('walk-'))sheet.referenceHeight=images[action as Action].height/2*referenceRatio
+  // The walking body reuses the original idle pixels at exactly the same scale.
+  sheets['walk-left'].referenceHeight=sheets.idle.referenceHeight
   sheets['walk-right']=mirrorSheet(sheets['walk-left'])
   // The final reaction was drawn from the opposite facing; keep bow/tail orientation continuous.
   if(sheets.success)sheets.success.frames[7]!.mirror=true
@@ -117,7 +120,7 @@ export function poseFor(m:MascotDraw,phase:Phase,t:number,outcome:string):Pose {
   return phase==='thinking'?'think':'idle'
 }
 /** Paint the engine grid and fixed portrait sprites using nearest-neighbor scaling. */
-export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:number;rows:number;mascots:MascotDraw[];t:number;preset?:PixelPreset;direction?:SceneDirection},image:HTMLImageElement,crops:Crop[],phase:Phase,outcome:string,animations?:AnimationSprites,clock?:MotionClock,resources?:PackResources,travel?:TravelPose):void {
+export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:number;rows:number;mascots:MascotDraw[];t:number;preset?:PixelPreset;direction?:SceneDirection},image:HTMLImageElement,crops:Crop[],phase:Phase,outcome:string,animations?:AnimationSprites,clock?:MotionClock,resources?:PackResources,travel?:TravelPose,presentation?:CanvasRenderingContext2D,transition?:FormTransition):void {
   if((!frame.preset&&!resources?.scene&&clock?.working!==false)||(resources?.character&&!resources.character.spec.actions['walk-left']&&!resources.character.spec.actions['walk-right']))travel=undefined
   const cw=g.canvas.width/frame.cols,ch=g.canvas.height/frame.rows,clear=0x01000000
   g.clearRect(0,0,g.canvas.width,g.canvas.height);g.imageSmoothingEnabled=false
@@ -128,7 +131,7 @@ export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:n
   const time=clock?.time??frame.t
   const speech=frame.direction?.phase===phase&&clock?.working!==false&&frame.t<12?frame.direction.say:''
   const heroMaxHeight=g.canvas.height*(frame.direction ? .58 : .72)
-  const actionForPlan=(m:MascotDraw)=>plannedAction(frame.direction,phase,outcome,clock?.working,playbackAction(m,phase,outcome,clock))
+  const actionForPlan=(m:MascotDraw)=>plannedAction(frame.direction,phase,outcome,clock?.working,playbackAction(m,phase,outcome,clock,packReactionSeconds(resources?.character?.spec,outcome)))
   const actionForSprite=(m:MascotDraw)=>{
     const action=actionForPlan(m)
     return travel?.walking&&m===mascots[0]&&action!=='success'&&action!=='failed'?(travel.facing<0?'walk-left':'walk-right'):action
@@ -164,37 +167,53 @@ export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:n
   }
   // An idle mascot can roam across a frozen live scene without rerunning its script.
   const actorCenter=travel?travel.x*g.canvas.width:undefined
+  // Keep pixel scenes on the logical canvas; draw HD characters at display resolution.
+  const hd=(localCharacter?.spec.rendering==='smooth'||transition)&&presentation?presentation:undefined
+  const composite=()=>{if(hd){hd.save();hd.setTransform(1,0,0,1,0,0);hd.imageSmoothingEnabled=false;hd.drawImage(g.canvas,0,0,hd.canvas.width,hd.canvas.height);hd.restore()}}
+  if(hd){hd.save();hd.setTransform(1,0,0,1,0,0);hd.clearRect(0,0,hd.canvas.width,hd.canvas.height);hd.restore();composite();g.clearRect(0,0,g.canvas.width,g.canvas.height)}
   for(const m of mascots){
     if(localCharacter){
-      const action=actionForSprite(m),resolved=resolvePackClip(localCharacter.spec,action),clip=resolved.clip,f=packFrameAt(clip,travel?.walking?travel.seconds:time)
+      const action=workPackAction(actionForSprite(m),phase,clock?.working),resolved=resolvePackClip(localCharacter.spec,action),clip=resolved.clip,f=packFrameAt(clip,travel?.walking?travel.seconds:time)
       const scale=Math.max(.3,Math.min(2,m.look.scale))*(localScene?.spec.scale??1)
-      // Fit the whole clip at one pixel scale; moving hands cannot resize the body.
-      // Fit actual opaque content, preserving tall custom gestures as well
-      // as padded builtin cells. Keep one scale for the entire clip.
-      const ink=(frame:typeof f)=>localCharacter.bounds?.get(frame)??{x:0,y:0,w:frame.w,h:frame.h}
-      const bounds=ink(f),unit=Math.min(heroMaxHeight*scale/localCharacter.spec.referenceHeight,g.canvas.width/Math.max(1,...clip.frames.map(f=>ink(f).w)),g.canvas.height/Math.max(1,...clip.frames.map(f=>ink(f).h)))
-      const width=f.w*unit,height=f.h*unit,anchorX=(resolved.mirror?f.w-f.anchorX:f.anchorX)*unit
-      const foot=layout?.footY??Math.min(g.canvas.height-2,Math.max(bounds.h*unit,(m.py+8*scale)*ch/2)),center=layout?.centerX??actorCenter??(m.x+7*scale)*cw
-      const left=resolved.mirror?f.w-bounds.x-bounds.w:bounds.x,right=left+bounds.w
-      // Transparent gutters may leave the stage; visible artwork must fit.
-      const x=Math.max(-left*unit,Math.min(g.canvas.width-right*unit,center-anchorX))
-      const y=Math.max(-bounds.y*unit,Math.min(g.canvas.height-(bounds.y+bounds.h)*unit,foot-f.anchorY*unit))
-      if(resolved.mirror){g.save();g.translate(Math.round(x+width),Math.round(y));g.scale(-1,1);g.drawImage(localCharacter.images[f.atlas]!,f.x,f.y,f.w,f.h,0,0,Math.round(width),Math.round(height));g.restore()}
-      else g.drawImage(localCharacter.images[f.atlas]!,f.x,f.y,f.w,f.h,Math.round(x),Math.round(y),Math.round(width),Math.round(height))
+      // Fit actual opaque content for both sides of a transition. Padded cells
+      // retain main's common scale and contact point instead of shrinking.
+      const locate=(character:LoadedCharacter,clip:PackClip,frame:PackFrame,mirror:boolean)=>{
+        const ink=(f:PackFrame)=>character.bounds?.get(f)??{x:0,y:0,w:f.w,h:f.h}
+        const bounds=ink(frame),unit=Math.min(heroMaxHeight*scale/character.spec.referenceHeight,g.canvas.width/Math.max(1,...clip.frames.map(f=>ink(f).w)),g.canvas.height/Math.max(1,...clip.frames.map(f=>ink(f).h)))
+        const width=frame.w*unit,height=frame.h*unit,anchorX=(mirror?frame.w-frame.anchorX:frame.anchorX)*unit
+        const foot=layout?.footY??Math.min(g.canvas.height-2,Math.max(bounds.h*unit,(m.py+8*scale)*ch/2)),center=layout?.centerX??actorCenter??(m.x+7*scale)*cw
+        const left=mirror?frame.w-bounds.x-bounds.w:bounds.x,right=left+bounds.w
+        return {width,height,x:Math.max(-left*unit,Math.min(g.canvas.width-right*unit,center-anchorX)),y:Math.max(-bounds.y*unit,Math.min(g.canvas.height-(bounds.y+bounds.h)*unit,foot-frame.anchorY*unit))}
+      }
+      const {x,y,width,height}=locate(localCharacter,clip,f,resolved.mirror),actorG=hd??g
+      const preserve=!!hd||resolved.mirror||localCharacter.spec.rendering==='smooth'
+      if(preserve)actorG.save()
+      if(hd)actorG.setTransform(hd.canvas.width/g.canvas.width,0,0,hd.canvas.height/g.canvas.height,0,0)
+      actorG.imageSmoothingEnabled=localCharacter.spec.rendering==='smooth'
+      if(actorG.imageSmoothingEnabled)actorG.imageSmoothingQuality='high'
+      if(transition){
+        const old=transition.from,previous=resolvePackClip(old.spec,transition.action??action),oldFrame=packFrameAt(previous.clip,transition.time??(travel?.walking?travel.seconds:time)),oldLocation=locate(old,previous.clip,oldFrame,previous.mirror)
+        const layer:CharacterLayer={image:localCharacter.images[f.atlas]!,frame:f,x:Math.round(x),y:Math.round(y),width:Math.round(width),height:Math.round(height),mirror:resolved.mirror,smooth:localCharacter.spec.rendering==='smooth'}
+        paintFormTransition(actorG,{image:old.images[oldFrame.atlas]!,frame:oldFrame,x:Math.round(oldLocation.x),y:Math.round(oldLocation.y),width:Math.round(oldLocation.width),height:Math.round(oldLocation.height),mirror:previous.mirror,smooth:old.spec.rendering==='smooth'},layer,transition.progress)
+      }
+      else if(resolved.mirror){actorG.translate(Math.round(x+width),Math.round(y));actorG.scale(-1,1);actorG.drawImage(localCharacter.images[f.atlas]!,f.x,f.y,f.w,f.h,0,0,Math.round(width),Math.round(height))}
+      else actorG.drawImage(localCharacter.images[f.atlas]!,f.x,f.y,f.w,f.h,Math.round(x),Math.round(y),Math.round(width),Math.round(height))
+      if(preserve)actorG.restore()
       if(m===mascots[0]&&g.canvas.dataset){g.canvas.dataset.action=action;g.canvas.dataset.clip=resolved.action;g.canvas.dataset.frame=String(clip.frames.indexOf(f));g.canvas.dataset.motionTime=String(time);g.canvas.dataset.sceneTime=String(frame.t);g.canvas.dataset.playing=String(clock?.playing??true);g.canvas.dataset.characterX=String(Math.round(x));g.canvas.dataset.characterY=String(Math.round(y));g.canvas.dataset.walking=String(travel?.walking??false)}
       continue
     }
     if(animations){
       const action=actionForSprite(m)
       const walking=action==='walk-left'||action==='walk-right'
-      const index=frameAt(action,walking&&travel?travel.seconds:action==='success'&&outcome!=='success'?time%1.39:time)
+      const index=frameAt(action,walking&&travel?travel.seconds:time)
       const sheet=animations[action],registered=sheet.frames[index]!,crop=registered.crop
       if(m===mascots[0]&&g.canvas.dataset){g.canvas.dataset.action=action;g.canvas.dataset.frame=String(index);g.canvas.dataset.motionTime=String(time);g.canvas.dataset.sceneTime=String(frame.t);g.canvas.dataset.playing=String(clock?.playing??true);g.canvas.dataset.walking=String(travel?.walking??false)}
       const scale=Math.max(.3,Math.min(2,m.look.scale)),unit=Math.min(heroMaxHeight,12*scale*ch/2)*(localScene?.spec.scale??1)/sheet.referenceHeight
       const width=unit*crop.w,height=unit*crop.h,anchorX=registered.mirror?crop.w-registered.anchorX:registered.anchorX,anchorY=registered.anchorY
       const foot=layout?.footY??Math.min(g.canvas.height-2,Math.max(height,(m.py+8*scale)*ch/2))
       const x=Math.max(0,Math.min(g.canvas.width-width,(layout?.centerX??actorCenter??(m.x+7*scale)*cw)-anchorX*unit))
-      const hop=action==='success'?-Math.sin(Math.PI*Math.max(0,Math.min(1,(time-.11)/.63)))*8*scale:action==='idle'?Math.sin(time*2)*1:0
+      const cycle=time%1
+      const hop=action==='success'?-Math.sin(Math.PI*Math.max(0,Math.min(1,(cycle-.125)/.625)))*8*scale:action==='idle'?Math.sin(cycle*Math.PI*2):0
       const y=Math.max(0,Math.min(g.canvas.height-height,foot-anchorY*unit+hop))
       if(registered.mirror){g.save();g.translate(Math.round(x+width),Math.round(y));g.scale(-1,1);g.drawImage(sheet.image,crop.x,crop.y,crop.w,crop.h,0,0,Math.round(width),Math.round(height));g.restore()}
       else g.drawImage(sheet.image,crop.x,crop.y,crop.w,crop.h,Math.round(x),Math.round(y),Math.round(width),Math.round(height))
@@ -212,4 +231,5 @@ export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:n
   }
   if(localScene?.foreground)paintPackLayer(g,localScene,localScene.foreground)
   if(speech)paintDirectionBubble(g,speech)
+  composite()
 }

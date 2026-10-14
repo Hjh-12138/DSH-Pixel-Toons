@@ -1,0 +1,880 @@
+{
+  "format": "dsh-toons-pack",
+  "version": 1,
+  "id": "whale-dual-pixel",
+  "name": "鲸鱼娘 · 像素",
+  "description": "双形态鲸鱼娘，十动作八帧；在角色下方切换高清与像素。",
+  "character": {
+    "atlases": {
+      "atlas-0": "atlas-0.png",
+      "atlas-1": "atlas-1.png",
+      "atlas-2": "atlas-2.png",
+      "atlas-3": "atlas-3.png",
+      "atlas-4": "atlas-4.png"
+    },
+    "referenceHeight": 42,
+    "rendering": "pixelated",
+    "actions": {
+      "idle": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-0",
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 64,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 128,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 192,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 0,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 64,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 128,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 192,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          }
+        ]
+      },
+      "think": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-0",
+            "x": 0,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 64,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 128,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 192,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 0,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 64,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 128,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-0",
+            "x": 192,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          }
+        ]
+      },
+      "read": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-1",
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 64,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 128,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 192,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 0,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 64,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 128,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 192,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 200
+          }
+        ]
+      },
+      "type": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-1",
+            "x": 0,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 64,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 128,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 192,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 0,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 64,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 128,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          },
+          {
+            "atlas": "atlas-1",
+            "x": 192,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 100
+          }
+        ]
+      },
+      "search": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-2",
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 64,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 128,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 192,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 0,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 64,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 128,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 192,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          }
+        ]
+      },
+      "check": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-2",
+            "x": 0,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 64,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 128,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 192,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 0,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 64,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 128,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          },
+          {
+            "atlas": "atlas-2",
+            "x": 192,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 150
+          }
+        ]
+      },
+      "success": {
+        "loop": false,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-3",
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 64,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 128,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 192,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 0,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 64,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 128,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 192,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          }
+        ]
+      },
+      "failed": {
+        "loop": false,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-3",
+            "x": 0,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 64,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 128,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 192,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 0,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 64,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 128,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          },
+          {
+            "atlas": "atlas-3",
+            "x": 192,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 175
+          }
+        ]
+      },
+      "walk-left": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-4",
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 64,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 128,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 192,
+            "y": 0,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 0,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 64,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 128,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 192,
+            "y": 64,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          }
+        ]
+      },
+      "walk-right": {
+        "loop": true,
+        "stance": "standing",
+        "frames": [
+          {
+            "atlas": "atlas-4",
+            "x": 0,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 64,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 128,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 192,
+            "y": 128,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 0,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 64,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 128,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          },
+          {
+            "atlas": "atlas-4",
+            "x": 192,
+            "y": 192,
+            "w": 64,
+            "h": 64,
+            "anchorX": 32,
+            "anchorY": 56,
+            "durationMs": 125
+          }
+        ]
+      }
+    }
+  }
+}

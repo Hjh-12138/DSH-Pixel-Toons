@@ -4,20 +4,23 @@ import type {Phase} from '../engine/library'
 export type Action='idle'|'think'|'read'|'type'|'search'|'check'|'success'|'failed'|'walk-left'|'walk-right'
 export type Clip={durations:readonly number[];loop:boolean}
 export const FRAMES_PER_ACTION=8
+export const FRAME_DURATION_MS=125
+export const CYCLE_DURATION_MS=FRAMES_PER_ACTION*FRAME_DURATION_MS
+const durations=Object.freeze(Array<number>(FRAMES_PER_ACTION).fill(FRAME_DURATION_MS))
 export const ATLAS_COLUMNS=4
 export const CLIPS:Record<Action,Clip>={
-  idle:{durations:[1500,200,190,60,60,120,190,260],loop:true},
-  think:{durations:[325,325,175,175,250,250,175,175],loop:true},
-  read:{durations:[1200,200,100,100,100,100,175,175],loop:true},
-  type:{durations:[50,50,50,50,50,50,50,50],loop:true},
-  search:{durations:[150,150,150,150,150,150,150,150],loop:true},
-  check:{durations:[325,325,125,125,175,175,175,175],loop:true},
-  success:{durations:[110,110,90,90,170,170,325,325],loop:false},
-  failed:{durations:[175,175,175,175,225,225,300,300],loop:false},
-  'walk-left':{durations:[75,75,75,75,75,75,75,75],loop:true},
-  'walk-right':{durations:[75,75,75,75,75,75,75,75],loop:true},
+  idle:{durations,loop:true},
+  think:{durations,loop:true},
+  read:{durations,loop:true},
+  type:{durations,loop:true},
+  search:{durations,loop:true},
+  check:{durations,loop:true},
+  success:{durations,loop:true},
+  failed:{durations,loop:true},
+  'walk-left':{durations,loop:true},
+  'walk-right':{durations,loop:true},
 }
-export const OUTCOME_SECONDS=1.8
+export const OUTCOME_SECONDS=CYCLE_DURATION_MS/1000
 /** Activity controls work poses; scene movement and gestures still apply. */
 export function actionFor(m:MascotDraw,phase:Phase,outcome:string):Action {
   if(outcome==='failed')return 'failed'
@@ -30,7 +33,7 @@ export function actionFor(m:MascotDraw,phase:Phase,outcome:string):Action {
   if(phase==='testing'||phase==='building'||phase==='git')return 'check'
   return phase==='thinking'?'think':'idle'
 }
-/** Playback uses elapsed time, independent of display FPS; ending poses hold. */
+/** Every action loops through eight equal frames in one second, independent of display FPS. */
 export function frameAt(action:Action,seconds:number):number {
   const clip=CLIPS[action],total=clip.durations.reduce((a,b)=>a+b,0)
   let time=Math.max(0,Number.isFinite(seconds)?seconds*1000:0)
@@ -47,9 +50,9 @@ export function advanceMotion(clock:MotionClock,delta:number,working:boolean,vis
 }
 
 /** End reactions are brief; an inactive task always settles into an idle loop. */
-export function playbackAction(m:MascotDraw,phase:Phase,outcome:string,clock?:MotionClock):Action {
+export function playbackAction(m:MascotDraw,phase:Phase,outcome:string,clock?:MotionClock,reactionSeconds=OUTCOME_SECONDS):Action {
   if(!clock)return actionFor(m,phase,outcome)
-  const reacting=(outcome==='success'||outcome==='failed')&&clock.outcomeAge<OUTCOME_SECONDS
+  const reacting=(outcome==='success'||outcome==='failed')&&clock.outcomeAge<reactionSeconds
   if(reacting)return outcome as 'success'|'failed'
   if(clock.working===false)return 'idle'
   return actionFor(m,phase,'none')

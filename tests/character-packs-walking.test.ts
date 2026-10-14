@@ -14,7 +14,7 @@ for(const id of ['silver-music','purple-star-cat','orange-flower','blue-fan','bl
   const merged=frames[0]!.atlas==='walk'
   assert.equal(frames.length,8)
   assert.equal(resolvePackClip(spec,'walk-right').mirror,true)
-  assert.deepEqual(frames.map(f=>f.durationMs),Array(8).fill(merged?100:75))
+  assert.deepEqual(frames.map(f=>f.durationMs),Array(8).fill(125))
   for(let i=0;i<8;i++){
    const frame=frames[i]!,g=walkGeometry(png,frame,222,160)
    assert.equal(g.groundGap,0,`frame ${i+1}: supporting shoe does not meet the floor`)

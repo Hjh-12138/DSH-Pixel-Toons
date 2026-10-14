@@ -24,7 +24,7 @@ export class CharacterTravel {
     if(!working&&this.working!==false){this.excursion=false;this.returning=false;this.rest=1.2}
     this.working=working
     if(reacting){this.pose.walking=false;return this.snapshot()}
-    if(!canWalk){this.pose.x=input.home;this.target=input.home;this.pose.walking=false;this.started=false;return this.snapshot()}
+    if(!canWalk){this.pose.x=input.home;this.target=input.home;this.pose.walking=false;this.started=false;this.direction=undefined;return this.snapshot()}
     const dt=Math.max(0,Math.min(.25,Number.isFinite(input.delta)?input.delta:0))
     const margin=Math.min(.43,Math.max(.12,(height*.65+8)/Math.max(1,width)))
     const bounded=(x:number)=>Math.max(margin,Math.min(1-margin,x))

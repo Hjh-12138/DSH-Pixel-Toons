@@ -19,11 +19,26 @@ test('activity and scene gestures choose multi-frame work actions',()=>{
   assert.deepEqual([...seen],[0,1,2,3,4,5,6,7],action)
   assert.equal(frameAt(action,t+.001),CLIPS[action].loop?0:7,`${action} loops or holds its last frame`)
  }
- assert.equal(frameAt('success',10),7);assert.equal(frameAt('read',-1),0)
+ assert.equal(frameAt('success',10),0);assert.equal(frameAt('read',-1),0)
 })
-test('eight-frame cycles retain their original playback speed',()=>{
- const totals={idle:2580,think:1850,read:2150,type:400,search:1200,check:1600,success:1390,failed:1750,'walk-left':600,'walk-right':600}
- for(const action of Object.keys(totals) as (keyof typeof totals)[])assert.equal(CLIPS[action].durations.reduce((a,b)=>a+b,0),totals[action],action)
+test('every action uses eight equal frames and loops exactly once per second',()=>{
+ for(const action of Object.keys(CLIPS) as Action[]){
+  assert.deepEqual(CLIPS[action].durations,Array(8).fill(125),action)
+  assert.equal(CLIPS[action].loop,true,action)
+  for(let frame=0;frame<8;frame++){
+   assert.equal(frameAt(action,frame*.125),frame,`${action} frame boundary`)
+   assert.equal(frameAt(action,(frame+1)*.125-.000001),frame,`${action} holds each frame for 125ms`)
+   assert.equal(frameAt(action,3+frame*.125),frame,`${action} repeats without an extra endpoint hold`)
+  }
+  assert.equal(frameAt(action,1),0,action)
+ }
+})
+test('task outcomes play one complete one-second cycle before returning to idle',()=>{
+ assert.equal(OUTCOME_SECONDS,1)
+ for(const outcome of ['success','failed']){
+  assert.equal(playbackAction(standing,'editing',outcome,{time:.999,outcomeAge:.999,playing:true,working:false}),outcome)
+  assert.equal(playbackAction(standing,'editing',outcome,{time:1,outcomeAge:1,playing:true,working:false}),'idle')
+ }
 })
 test('completed tasks celebrate then keep looping idle frames without a running worker',()=>{
  const start:MotionClock={time:0,outcomeAge:0,playing:false}
@@ -75,7 +90,7 @@ test('renderer switches real source frames, keeping prone actions at a stable ro
  const cells=new Uint32Array(90*14*3);for(let i=0;i<90*14;i++){cells[i*3+1]=0x01000000;cells[i*3+2]=0x01000000}
  const frame={cells,cols:90,rows:14,t:0,mascots:[standing]}
  const crops=Array(12).fill({x:0,y:0,w:80,h:100})
- for(const time of [0,.051,.101,.151,.201,.251,.301,.351])paint(g,frame,sheet.image,crops,'editing','none',sprites,{time,outcomeAge:time,playing:true})
+ for(const time of [0,.126,.251,.376,.501,.626,.751,.876])paint(g,frame,sheet.image,crops,'editing','none',sprites,{time,outcomeAge:time,playing:true})
  assert.deepEqual(draws.map(d=>d[0]),[800,900,1000,1100,1200,1300,1400,1500])
  assert.ok(draws.every(d=>d[4]===draws[0]![4]&&d[5]===draws[0]![5]))
 })
@@ -116,7 +131,7 @@ test('action sheet registration preserves prone pixel scale and shares mirrored 
   assert.equal(sprites.idle.referenceHeight,40)
   assert.equal(sprites.read.referenceHeight,60);assert.equal(sprites.type.referenceHeight,60)
   assert.equal(sprites.read.frames[0]!.crop.h,20,'prone height is not stretched to standing height')
-  assert.equal(sprites['walk-left'].referenceHeight,35)
+  assert.equal(sprites['walk-left'].referenceHeight,40,'a shorter walking pose must keep the idle artwork pixel scale')
   assert.equal(sprites['walk-right'].image,sprites['walk-left'].image)
   assert.ok(sprites['walk-right'].frames.every(frame=>frame.mirror===true))
   assert.ok(sprites['walk-left'].frames.every(frame=>!frame.mirror))

@@ -10,6 +10,8 @@ import {randomUUID} from 'node:crypto'
 import {DEFAULT_PREFERENCES,type Preferences} from '../src/client/preferences'
 import type {LocalPack} from '../src/client/resource-pack'
 import type {useResourcePacks} from '../src/client/use-resource-packs'
+import {DEFAULT_CHARACTER_ID} from '../src/character-names'
+import {WHALE_FORM_IDS} from '../src/client/whale-forms'
 
 // Model hook state, dependency changes, effect cleanup and async rerenders.
 // The real useResourcePacks body and builtin resolver are bundled unchanged.
@@ -57,7 +59,7 @@ test('failed initial enumeration preserves saved IDs and storage error while bui
   const state=await setup({characterPackId:'custom-character',scenePackId:'custom-scene'},async()=>{throw Error('IndexedDB blocked')})
   try{
     const library=await state.harness.flush()
-    assert.equal(library.loaded,true);assert.equal(library.error,'IndexedDB blocked');assert.equal(library.packs.length,6)
+    assert.equal(library.loaded,true);assert.equal(library.error,'IndexedDB blocked');assert.equal(library.packs.length,8)
     assert.deepEqual(state.changes,[]);assert.equal(state.prefs.characterPackId,'custom-character');assert.equal(state.prefs.scenePackId,'custom-scene')
     library.chooseCharacter('builtin-silver-music')
     const chosen=await state.harness.flush()
@@ -71,7 +73,7 @@ test('failed refresh retains last known local packs and only confirmed absence c
     await state.harness.flush()
     state.setList(async()=>{throw Error('IndexedDB temporarily unavailable')});state.refresh()
     const failed=await state.harness.flush()
-    assert.equal(failed.packs.length,8);assert.equal(failed.error,'IndexedDB temporarily unavailable')
+    assert.equal(failed.packs.length,10);assert.equal(failed.error,'IndexedDB temporarily unavailable')
     assert.equal(failed.resources.character?.id,'custom-character');assert.equal(failed.resources.scene?.id,'custom-scene');assert.deepEqual(state.changes,[])
     state.setList(async()=>[]);state.refresh()
     const removed=await state.harness.flush()
@@ -86,5 +88,37 @@ test('transient selected resource reads fall back without overwriting saved sele
     const failed=await state.harness.flush()
     assert.equal(failed.error,'Image decoding unavailable');assert.deepEqual(failed.resources,{})
     assert.equal(state.prefs.characterPackId,'custom-character');assert.equal(state.prefs.scenePackId,'custom-scene');assert.deepEqual(state.changes,[])
+  }finally{await state.dispose()}
+})
+
+test('choosing the native Deep seek is persistent and reset still selects the pixel whale',async()=>{
+  const state=await setup({},async()=>[])
+  try{
+    const initial=await state.harness.flush()
+    assert.equal(initial.resources.character?.id,WHALE_FORM_IDS.pixel)
+    initial.chooseCharacter(DEFAULT_CHARACTER_ID)
+    const native=await state.harness.flush()
+    assert.equal(state.prefs.characterPackId,DEFAULT_CHARACTER_ID)
+    assert.equal(native.resources.character,undefined)
+    assert.equal(native.error,'')
+    state.refresh();await state.harness.flush()
+    assert.equal(state.prefs.characterPackId,DEFAULT_CHARACTER_ID)
+    assert.equal(state.changes.length,1,'refresh must not treat the native sprite as a removed pack')
+    state.harness.value.reset()
+    const reset=await state.harness.flush()
+    assert.equal(state.prefs.characterPackId,undefined)
+    assert.equal(reset.resources.character?.id,WHALE_FORM_IDS.pixel)
+  }finally{await state.dispose()}
+})
+
+test('confirmed missing scene clears only the scene when native Deep seek was selected',async()=>{
+  const state=await setup({characterPackId:DEFAULT_CHARACTER_ID,scenePackId:'removed-scene'},async()=>[])
+  try{
+    const library=await state.harness.flush()
+    assert.equal(state.prefs.characterPackId,DEFAULT_CHARACTER_ID)
+    assert.equal(state.prefs.scenePackId,undefined)
+    assert.equal(library.resources.character,undefined)
+    assert.equal(state.changes.length,1)
+    assert.match(library.error,/已移除/)
   }finally{await state.dispose()}
 })

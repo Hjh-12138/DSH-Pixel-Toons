@@ -6,8 +6,10 @@ import {thumbnail,silhouetteDifference} from './helpers/sprite-pixels'
 
 for(const direction of ['left','right'] as const){
  const png=pngPixels(new URL('../assets/animations/walk.png',import.meta.url)),{pixels,width}=png
+ const idle=pngPixels(new URL('../assets/animations/idle.png',import.meta.url))
+ const standing=animationBoundsFromPixels(idle.pixels,idle.width,idle.height,[0,1])
  const original={image:{} as HTMLImageElement,...animationBoundsFromPixels(pixels,png.width,png.height,[0,1])} as AnimationSheet
- const sheet=direction==='right'?mirrorSheet(original):original,displayScale=80/sheet.referenceHeight,frames=sheet.frames
+ const sheet=direction==='right'?mirrorSheet(original):original,displayScale=80/standing.referenceHeight,frames=sheet.frames
  test(`all eight ${direction} frames keep the correct 2D facing`,()=>{
   for(const frame of frames){
    const {crop,anchorX}=frame;let sum=0,count=0
@@ -23,7 +25,9 @@ for(const direction of ['left','right'] as const){
   // Opposite support phases can have similar outlines in a near-front view.
   // Ignore RGB: all eight must still differ geometrically, not just swap colors.
   // Keep the trailing whale tail out of the comparison; only feet/lower legs count.
-  const region=direction==='left'?{left:-40,right:25,top:-10,bottom:0}:{left:-25,right:40,top:-10,bottom:0}
+  // The original short legs occupy only the last seven display pixels. A
+  // taller band includes the unchanged skirt and hides the real foot motion.
+  const region=direction==='left'?{left:-40,right:25,top:-7,bottom:0}:{left:-25,right:40,top:-7,bottom:0}
   const legs=frames.map(frame=>thumbnail(png,frame,displayScale,region))
   assert.equal(legs.length,8)
   for(let a=0;a<8;a++)for(let b=a+1;b<8;b++)assert.ok(silhouetteDifference(legs[a]!,legs[b]!)>=.15,`${direction} frames ${a+1}/${b+1} repeat a leg outline`)
