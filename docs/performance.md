@@ -41,3 +41,5 @@ npm run test:browser
 浏览器验证启动自己的临时预览服务器，完成后关闭。它检查26套动作的八帧播放、两形态缓存复用、切背景、协作扫描、暂停、原生选择刷新恢复、卡片与窄屏布局，以及真实任务节奏下对密集阶段的合并和完成优先级。截图和记录保存在 `work/browser-tests/`；打包记录在 `work/package-check/validation.json`。
 
 GitHub 的 `Plugin checks` 在 PR 和主分支提交上自动运行：Linux、Windows 均检查构建、类型和测试；Linux 增加人物、包体和浏览器验证；Windows 增加隔离的桌面更新器集成测试。检查报告、截图和已验证安装包作为构建产物保留7天，不自动发布 Release 或安装桌面插件。
+
+CI 使用 `npm run test:ci` 串行运行测试文件，避免图片解码校验占满共享 runner 的 CPU 后干扰场景的80毫秒执行保护。运行时限制保持原值；本地 `npm test` 仍并行运行。

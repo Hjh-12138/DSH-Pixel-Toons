@@ -48,6 +48,8 @@
     "pretypecheck": "node scripts/build-runtime-assets.mjs",
     "typecheck": "tsc -p tsconfig.host.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "test:ci": "tsx --test --test-concurrency=1 tests/*.test.ts",
+    "pretest:ci": "node scripts/build-runtime-assets.mjs",
     "preview": "node scripts/preview.mjs",
     "characters:pixel": "node scripts/build-whale-pixel.mjs",
     "characters:check": "node scripts/check-whale-art.mjs",

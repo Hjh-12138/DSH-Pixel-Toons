@@ -18,7 +18,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:ci
       - run: npm run characters:check
       - run: npm run package:check
       - run: npx playwright install --with-deps chromium
@@ -45,7 +45,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:ci
       - name: Isolated updater integration checks
         shell: powershell
         run: .\tests\desktop-updater.test.ps1
