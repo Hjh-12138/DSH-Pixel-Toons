@@ -1,0 +1,66 @@
+{
+  "leg": {
+    "source": "sources/original-profile.png",
+    "bbox": [
+      209,
+      469,
+      59,
+      92
+    ],
+    "pivot": [
+      26,
+      5
+    ],
+    "keptOriginalPixels": 4097
+  },
+  "shoe": {
+    "source": "sources/original-profile.png",
+    "bbox": [
+      164,
+      543,
+      97,
+      54
+    ],
+    "pivot": [
+      71,
+      10
+    ],
+    "keptOriginalPixels": 3811
+  },
+  "arm": {
+    "source": "sources/original-profile.png",
+    "bbox": [
+      245,
+      296,
+      64,
+      118
+    ],
+    "pivot": [
+      21,
+      10
+    ],
+    "keptOriginalPixels": 4432
+  },
+  "robot": {
+    "source": "sources/original-profile.png",
+    "bbox": [
+      407,
+      130,
+      105,
+      87
+    ],
+    "pivot": [
+      49,
+      43
+    ],
+    "keptOriginalPixels": 5089
+  },
+  "body": {
+    "size": [
+      499,
+      580
+    ],
+    "cleanup": "body-clean-source.png",
+    "tailFrom": "original-tail-body.png"
+  }
+}

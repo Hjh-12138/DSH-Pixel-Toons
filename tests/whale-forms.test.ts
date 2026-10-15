@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {decodePreferences} from '../src/client/preferences'
 import {whaleForm,WHALE_FORM_IDS} from '../src/client/whale-forms'
-import {readLocalPack,parsePackManifest,checkFrameBounds,packFrameAt,packReactionSeconds,ACTIONS} from '../src/client/resource-pack'
+import {readLocalPack,parsePackManifest,checkFrameBounds,packFrameAt,packReactionSeconds,PACK_ACTIONS} from '../src/client/resource-pack'
 import {playbackAction} from '../src/client/animation'
 import type {MascotDraw} from '../src/engine/script'
 
@@ -16,7 +16,7 @@ test('whale selection persists without changing scene, style or compact preferen
   assert.equal(whaleForm('builtin-silver-music'),undefined)
 })
 
-test('both actual whale archives import with proportional anchors and independent animation timing',async()=>{
+test('both actual whale archives import with matching thirteen actions, proportional anchors and one-second timing',async()=>{
   const packs=await Promise.all(['pixel','hd'].map(async form=>readLocalPack(new Blob([readFileSync(`examples/character-packs/whale-dual-${form}.toons.zip`)]))))
   const [pixel,hd]=packs.map(p=>p.manifest.character!)
   assert.equal(hd!.rendering,'smooth');assert.equal(pixel!.rendering,'pixelated')
@@ -29,16 +29,14 @@ test('both actual whale archives import with proportional anchors and independen
     }
     checkFrameBounds(c,images)
   }
-  for(const action of ACTIONS){
+  for(const action of PACK_ACTIONS){
     const a=pixel!.actions[action]!,b=hd!.actions[action]!
     assert.equal(a.frames.length,8);assert.equal(b.frames.length,8);assert.equal(a.loop,b.loop)
     for(let i=0;i<8;i++){
       const p=a.frames[i]!,h=b.frames[i]!
-      assert.equal(h.durationMs,125)
+      assert.equal(h.durationMs,125);assert.equal(p.durationMs,125)
       for(const key of ['w','h','anchorY'] as const)assert.equal(h[key],p[key]*8)
-      // HD walking has a wider trailing tail. Offset its canvas anchor while
-      // retaining the same world-space foot point instead of clipping the fluke.
-      assert.equal(h.anchorX,action==='walk-left'?192:action==='walk-right'?320:p.anchorX*8)
+      assert.equal(h.anchorX,p.anchorX*8)
     }
     const seconds=a.frames.reduce((s,f)=>s+f.durationMs,0)/1000
     assert.equal(packFrameAt(a,seconds),a.frames[a.loop?0:7]);assert.equal(packFrameAt(b,b.frames.reduce((s,f)=>s+f.durationMs,0)/1000),b.frames[b.loop?0:7])
@@ -46,7 +44,7 @@ test('both actual whale archives import with proportional anchors and independen
   assert.equal(hd!.actions.idle.frames.reduce((s,f)=>s+f.durationMs,0),1000)
   const mascot={look:{pose:'stand'}} as MascotDraw,duration=packReactionSeconds(hd,'failed')
   assert.equal(duration,1)
-  assert.equal(packReactionSeconds(pixel,'failed'),1.4)
+  assert.equal(packReactionSeconds(pixel,'failed'),1)
   assert.equal(playbackAction(mascot,'running','failed',{time:.999,outcomeAge:.999,playing:true,working:false},duration),'failed')
   assert.equal(playbackAction(mascot,'running','failed',{time:1,outcomeAge:1,playing:true,working:false},duration),'idle')
   const raw=JSON.parse(readFileSync('assets/characters/whale-dual-hd/manifest.json','utf8'));raw.character.rendering='unsafe'

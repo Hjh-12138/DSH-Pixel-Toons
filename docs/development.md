@@ -1,6 +1,8 @@
 # 开发与渲染说明
 
-本文记录 DeepSeek Toons 0.1.26 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
+本文记录 DeepSeek Toons 0.1.27 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
+
+鲸鱼娘双形态的可编辑分层、关节与重建命令见[人物源工程与一致性验收](../design/whale-source/README.md)。`npm run characters:check` 输出双形态总览、八帧展开和检查结果；`npm run characters:review` 提供逐帧拖动对比页；`npm run characters:rebuild` 从归档图层生成高清候选，并对照已确认素材，不覆盖正式图集。
 
 ## 从源码安装
 

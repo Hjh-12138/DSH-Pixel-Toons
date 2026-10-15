@@ -1,6 +1,6 @@
 {
   "name": "dsh-toons",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "description": "Pixel mascot cartoons for DeepSeek Harness",
   "type": "module",
   "license": "MIT",
@@ -45,6 +45,10 @@
     "typecheck": "tsc -p tsconfig.host.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "preview": "node scripts/preview.mjs",
+    "characters:pixel": "node scripts/build-whale-pixel.mjs",
+    "characters:check": "node scripts/check-whale-art.mjs",
+    "characters:rebuild": "node scripts/rebuild-whale-hd.mjs",
+    "characters:review": "node scripts/review-whale-art.mjs",
     "prepack": "npm run build"
   },
   "peerDependencies": {
@@ -73,6 +77,7 @@
     "@types/react-dom": "~18.3.1",
     "esbuild": "^0.25.0",
     "fflate": "0.8.3",
+    "playwright": "1.62.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sharp": "^0.35.5",

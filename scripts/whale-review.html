@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鲸鱼娘 · 人物一致性验收</title>
+<style>
+body{margin:24px auto;padding:0 20px;max-width:1100px;background:#f4f5f7;color:#24364c;font:15px system-ui}
+button,select,input{font:inherit;margin:5px;padding:5px}section{display:flex;gap:12px;flex-wrap:wrap}
+.frame{flex:1;min-width:280px;background:#e6e6e6;overflow:auto}.frame p{margin-left:12px}
+.frame img{display:block;margin:auto;height:var(--stage-height,340px);width:auto;max-width:none}
+.pixel{image-rendering:pixelated}#overview{width:100%}p,li{line-height:1.8}label{display:inline-block}h1{font-size:25px}
+.baseline{height:var(--stage-height,340px);background:linear-gradient(transparent calc(87.5% - 1px),#c87575 87.5%,transparent calc(87.5% + 1px))}
+</style>
+<h1>鲸鱼娘 · 人物一致性验收</h1>
+<p>两种形态共13套动作、每套8帧×125毫秒。红线是同一落脚基线；选择动作、逐帧拖动，检查轮廓与循环。</p>
+<select id="action" aria-label="动作">{{OPTIONS}}</select>
+<button id="play">暂停</button>
+<label>帧 <input id="frame" type="range" min="0" max="7" value="0"><output id="number">1 / 8</output></label>
+<section>
+  <div class="frame"><p>高清</p><div class="baseline"><img id="hd" alt="高清动作帧"></div></div>
+  <div class="frame"><p>像素</p><div class="baseline"><img id="pixel" class="pixel" alt="像素动作帧"></div></div>
+</section>
+<ul>{{CHECKLIST}}</ul>
+<p>自动检查：人物头脸、短腿袜鞋、机器人逐帧对照待机；尾巴连通；两形态动作对应；图层源文件校验。手臂解剖、道具可读性与循环观感仍需看图确认。</p>
+<img id="overview" src="overview.png" alt="双形态十三动作总览">
+<script>
+const frames={{FRAMES}},action=document.querySelector('#action'),slider=document.querySelector('#frame'),button=document.querySelector('#play');
+let playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,at=0,last=0;
+button.textContent=playing?'暂停':'播放';
+function paint(){
+  document.querySelector('#hd').src=frames[action.value].hd[at];
+  document.querySelector('#pixel').src=frames[action.value].pixel[at];
+  document.querySelector('#number').value=(at+1)+' / 8';slider.value=at;
+}
+function size(){
+  // Use the widest (collaboration) canvas for every action's scale, so the
+  // protagonist never shrinks when two clones enter the comparison.
+  const width=Math.min(...Array.from(document.querySelectorAll('.frame'),el=>el.clientWidth));
+  document.documentElement.style.setProperty('--stage-height',Math.min(512,Math.floor(width*2/3))+'px');
+}
+action.onchange=()=>{at=0;last=0;paint()};
+slider.oninput=()=>{playing=false;button.textContent='播放';at=Number(slider.value);paint()};
+button.onclick=()=>{playing=!playing;button.textContent=playing?'暂停':'播放';last=0};
+function tick(time){
+  if(!last||!playing)last=time;
+  const count=Math.floor((time-last)/125);
+  if(playing&&count){at=(at+count)%8;last+=count*125;paint()}
+  requestAnimationFrame(tick);
+}
+addEventListener('resize',size);size();paint();requestAnimationFrame(tick);
+</script>
+</html>
