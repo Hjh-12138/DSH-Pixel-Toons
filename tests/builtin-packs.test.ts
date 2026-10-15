@@ -32,7 +32,7 @@ test('eight named descriptors load selected local Host archives and preserve imp
     assert.equal(await library.resolveLibraryPack(descriptor,reader),pack)
     if(descriptor.id.startsWith('builtin-whale-dual-')){
       const c=pack.manifest.character!
-      assert.equal(Object.keys(c.actions).length,descriptor.id.endsWith('-hd')?13:10)
+      assert.equal(Object.keys(c.actions).length,13)
       assert.equal(c.rendering,descriptor.id.endsWith('-hd')?'smooth':'pixelated')
       for(const path of Object.values(c.atlases))assert.ok(pack.assets[path])
       for(const action of ['walk-left','walk-right'] as const)assert.ok(resolvePackClip(c,action).clip.frames.every(f=>f.durationMs===125))

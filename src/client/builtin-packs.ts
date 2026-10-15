@@ -7,6 +7,7 @@ import blondeManifest from '../../assets/characters/blonde-goth/manifest.json'
 import blackManifest from '../../assets/characters/black-beast/manifest.json'
 import whalePixelManifest from '../../assets/characters/whale-dual-pixel/manifest.json'
 import whaleHdManifest from '../../assets/characters/whale-dual-hd/manifest.json'
+import {DEFAULT_CHARACTER_ID} from '../character-names'
 
 // Separate IDs preserve users' imported versions and keep bundled updates selectable.
 const definitions=[
@@ -25,7 +26,7 @@ export type BuiltinArchiveReader=(id:string)=>Promise<Blob>
 /** Reject malformed or oversized RPC responses before allocating decoded ZIP bytes. */
 export function builtinArchiveFromResponse(id:string,value:unknown):Blob{
   const fail=()=>{throw new Error('内置角色读取失败')}
-  if(!isBuiltinPack(id)||!value||typeof value!=='object'||Array.isArray(value))return fail()
+  if((!isBuiltinPack(id)&&id!==DEFAULT_CHARACTER_ID)||!value||typeof value!=='object'||Array.isArray(value))return fail()
   const response=value as Record<string,unknown>,encoded=response.archive
   if(response.id!==id||typeof encoded!=='string'||!encoded.length||encoded.length>4*Math.ceil(PACK_LIMITS.archive/3)||encoded.length%4!==0)return fail()
   const padding=encoded.endsWith('==')?2:encoded.endsWith('=')?1:0

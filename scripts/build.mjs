@@ -1,5 +1,6 @@
 import {build} from 'esbuild'
 import {mkdir,writeFile} from 'node:fs/promises'
+import './build-runtime-assets.mjs'
 await mkdir('lib',{recursive:true})
 const worker=await build({entryPoints:['src/worker.ts'],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',minify:true})
 const workerText=worker.outputFiles[0].text

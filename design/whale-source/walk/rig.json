@@ -1,0 +1,18 @@
+{
+ "canvas":[768,800],"baseline":720,
+ "body":{"x":110,"y":90},"tail":{"sourceOrigin":[110,90],"pivot":[270,495],"amplitudeDegrees":3,"phaseDelay":0.7853981633974483},
+ "robot":{"x":523,"y":215,"width":105,"amplitude":6},
+ "arms":{"nearShoulder":[282,413],"farShoulder":[272,411],"scale":1.20,"sourceHandCenter":[43,99],"swingDegrees":15,"farBrightness":0.84},
+ "legs":{"hipX":270,"baseHipY":603,"thighLength":40,"shinLength":40,"restLength":79,"restKneeY":40,"restAnkle":[26,84],"farBrightness":0.84},
+ "secondary":{"bodyBobPixels":3,"hairShiftX":2,"hairShiftY":1,"hemWarpPixels":1.5},
+ "poses":[
+  {"name":"接触 · 左脚在前","phase":0,"bodyBob":0,"nearArm":-15,"farArm":15,"nearFoot":{"x":248,"floor":720,"angle":0},"farFoot":{"x":292,"floor":720,"angle":-6}},
+  {"name":"下沉 · 左脚承重","phase":0.7853981633974483,"bodyBob":2,"nearArm":-10,"farArm":10,"nearFoot":{"x":248,"floor":720,"angle":0},"farFoot":{"x":280,"floor":710,"angle":-4}},
+  {"name":"过渡 · 右腿经过","phase":1.5707963267948966,"bodyBob":-3,"nearArm":0,"farArm":0,"nearFoot":{"x":270,"floor":720,"angle":0},"farFoot":{"x":270,"floor":682,"angle":0}},
+  {"name":"上升 · 右脚前伸","phase":2.356194490192345,"bodyBob":-3,"nearArm":10,"farArm":-10,"nearFoot":{"x":282,"floor":720,"angle":0},"farFoot":{"x":252,"floor":704,"angle":0}},
+  {"name":"接触 · 右脚在前","phase":3.141592653589793,"bodyBob":0,"nearArm":15,"farArm":-15,"nearFoot":{"x":292,"floor":720,"angle":-6},"farFoot":{"x":248,"floor":720,"angle":0}},
+  {"name":"下沉 · 右脚承重","phase":3.9269908169872414,"bodyBob":2,"nearArm":10,"farArm":-10,"nearFoot":{"x":280,"floor":710,"angle":-4},"farFoot":{"x":248,"floor":720,"angle":0}},
+  {"name":"过渡 · 左腿经过","phase":4.71238898038469,"bodyBob":-3,"nearArm":0,"farArm":0,"nearFoot":{"x":270,"floor":682,"angle":0},"farFoot":{"x":270,"floor":720,"angle":0}},
+  {"name":"上升 · 左脚前伸","phase":5.497787143782138,"bodyBob":-3,"nearArm":-10,"farArm":10,"nearFoot":{"x":252,"floor":704,"angle":0},"farFoot":{"x":282,"floor":720,"angle":0}}
+ ]
+}

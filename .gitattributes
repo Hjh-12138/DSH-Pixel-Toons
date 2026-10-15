@@ -1,0 +1,5 @@
+# Keep byte-checked manifests and source locks reproducible on Windows checkouts.
+/assets/characters/whale-dual-*/manifest.json text eol=lf
+/design/whale-source/**/*.cjs text eol=lf
+/design/whale-source/**/*.json text eol=lf
+/design/whale-source/*.json text eol=lf

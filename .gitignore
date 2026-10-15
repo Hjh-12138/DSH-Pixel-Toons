@@ -1,5 +1,6 @@
 node_modules/
 lib/
+/assets/runtime/
 work/
 dist/
 *.tgz

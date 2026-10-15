@@ -1,6 +1,8 @@
 # 开发与渲染说明
 
-本文记录 DeepSeek Toons 0.1.26 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
+本文记录 DeepSeek Toons 0.1.27 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
+
+鲸鱼娘双形态的可编辑分层、关节与重建命令见[人物源工程与一致性验收](../design/whale-source/README.md)。`npm run characters:check` 输出双形态总览、八帧展开和检查结果；`npm run characters:review` 提供逐帧拖动对比页；`npm run characters:rebuild` 从归档图层生成高清候选，并对照已确认素材，不覆盖正式图集。
 
 ## 从源码安装
 
@@ -70,7 +72,7 @@ npm pack --pack-destination .\dist
 - `read.png`、`type.png`、`success.png`、`failed.png`：阅读、编辑、庆祝和失落。
 - `walk.png`：同一图集经水平镜像用于左右行走，共十种播放动作。
 
-原生 Deep seek、六个附加角色的十种动作，以及高清鲸鱼娘的十三种动作均使用 8 帧 × 125 毫秒。鲸鱼娘像素形态的左右行走也使用这一秒周期，其他动作仍按各自 manifest 播放。高清形态的 `build`、`git`、`agents` 为独立工作动作，旧包缺少时分别回退到 `check`、`check`、`search`，再按需回退到待机。素材结构与重建命令见[角色与行走说明](../design/character-walks.md)、[双形态说明](../design/whale-dual-forms.md)和[八帧动作设计](../design/eight-frame-animation.md)。
+原生 Deep seek、六个附加角色的十种动作，以及鲸鱼娘两种形态的十三种动作均使用8帧×125毫秒。两种形态的 `build`、`git`、`agents` 为独立工作动作，旧包缺少时分别回退到 `check`、`check`、`search`，再按需回退到待机。素材结构与重建命令见[角色与行走说明](../design/character-walks.md)、[双形态说明](../design/whale-dual-forms.md)和[八帧动作设计](../design/eight-frame-animation.md)。
 
 裁切帧共享人物中心和脚底基线，趴姿沿用站姿的像素比例。原生 Deep seek 走路复用 `idle.png` 首格的原像素，完整身体与鞋不缩放；`actionSheets` 令行走沿用待机的 397.5 像素比例基准。来源、原始腿鞋图层和重建脚本位于 `design/deepseek-walk-aligned-v1/`；`assets/deepseek-girl-poses.png` 保留作兼容回退。高清鲸鱼娘使用 `rendering: "smooth"`，人物按显示分辨率平滑绘制，像素形态和场景仍采用最近邻缩放。
 
@@ -81,6 +83,8 @@ npm pack --pack-destination .\dist
 支持行走的导入角色会走动、停留并返回工作位置；缺少行走动作时保持原地。阅读、编辑及真实会话结束状态优先于旧场景的动作意图。资源包制作规则见[本地资源包说明](local-resource-packs.md)。
 
 ## 场景调度与中文文字
+
+正式运行的普通工作姿势有约500毫秒最短展示时间，仅保留最新待展示阶段；状态文字、完成、失败、取消及新任务立即响应。手动预览默认立即切换。角色素材按需读取，已解码图片和边界复用；静止待机按动作帧重画。构建资源、包体预算、Linux／Windows CI与浏览器验证见[加载与自动检查](performance.md)。
 
 预制场景至少展示 20 秒，动态场景从真正上屏开始至少展示 45 秒。暂停任务、收起和后台时间不计入展示时长；手动换主题及损坏场景回退立即生效，人物动作继续跟随任务。0.1.24 动态气泡在新场景开始后的前 12 秒展示，任务阶段变化或结束后隐藏。完整编排格式见[动态场景说明](dynamic-scenes.md)。
 

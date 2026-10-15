@@ -1,18 +1,10 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react'
-import idleUrl from '../../assets/animations/idle.png'
-import thinkUrl from '../../assets/animations/think.png'
-import readUrl from '../../assets/animations/read.png'
-import typeUrl from '../../assets/animations/type.png'
-import searchUrl from '../../assets/animations/search.png'
-import checkUrl from '../../assets/animations/check.png'
-import successUrl from '../../assets/animations/success.png'
-import failedUrl from '../../assets/animations/failed.png'
-import walkingUrl from '../../assets/animations/walk.png'
 import workerSource from 'toons:worker-source'
 import {activityFrom,type ActivityEvent} from '../activity'
 import {SceneDeck,type SceneSpec} from '../scene'
-import {actionSheets,paint} from './sprite'
-import {advanceMotion,type Action,type MotionClock} from './animation'
+import {paint,type AnimationSprites} from './sprite'
+import {advanceMotion,type MotionClock} from './animation'
+import {loadNativeSprites} from './native-sprites'
 import {packReactionSeconds,type LoadedCharacter,type PackAction} from './resource-pack'
 import {CharacterTravel,type TravelPose} from './travel'
 import {bitmapSize,GRID_ROWS,stageColumns} from './layout'
@@ -21,20 +13,22 @@ import {fallbackCaption} from '../director-status'
 import {PIXEL_THEMES,GAME_THEMES,THEME_NAMES,isPixelTheme,isGameTheme} from '../presets'
 import {decodePreferences,DEFAULT_PREFERENCES,type Preferences} from './preferences'
 import {useResourcePacks} from './use-resource-packs'
-import {builtinArchiveFromResponse} from './builtin-packs'
+import {builtinArchiveFromResponse,isBuiltinPack} from './builtin-packs'
 import {ResourcePanel} from './ResourcePanel'
 import {WhaleFormSwitch} from './WhaleFormSwitch'
 import {whaleForm} from './whale-forms'
 import {FORM_TRANSITION_MS} from './form-transition'
 import {useSceneSchedule} from './scene-schedule'
+import {ActionSchedule} from './action-schedule'
+import {DEFAULT_CHARACTER_ID} from '../character-names'
 
 export type Rpc=(endpoint:string,payload:unknown,signal?:AbortSignal)=>Promise<{ok:true;value:unknown}|{ok:false;error:{message:string}}>
 function readPreferences():Preferences {try{return decodePreferences(localStorage.getItem('dsh-toons:v1'))}catch{return DEFAULT_PREFERENCES}}
 function hasSavedSource(){try{const source=JSON.parse(localStorage.getItem('dsh-toons:v1')||'{}').source;return source==='mix'||source==='ready-made only'}catch{return false}}
-type Props={sessionId:string;running:boolean;events:readonly ActivityEvent[];call:Rpc;t:(key:ToonsKey)=>string;demo?:boolean;walkPreview?:-1|1;stationaryPreview?:boolean;pausedPreview?:boolean}
+type Props={sessionId:string;running:boolean;events:readonly ActivityEvent[];call:Rpc;t:(key:ToonsKey)=>string;demo?:boolean;walkPreview?:-1|1;stationaryPreview?:boolean;pausedPreview?:boolean;immediateActions?:boolean}
 
 /** UI-only animation strip; the agent transcript contains no animation output. */
-export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,stationaryPreview=false,pausedPreview=false}:Props){
+export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,stationaryPreview=false,pausedPreview=false,immediateActions=false}:Props){
   const [prefs,setPrefs]=useState(readPreferences),[status,setStatus]=useState(''),[tokens,setTokens]=useState(0),[visible,setVisible]=useState(!document.hidden),[ready,setReady]=useState(false)
   const [config,setConfig]=useState({enabled:false,fps:20,intervalMs:60000}),[reducedMotion,setReducedMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches)
   const canvas=useRef<HTMLCanvasElement>(null),worker=useRef<Worker>(),abort=useRef<AbortController>(),epoch=useRef(0),lastInteresting=useRef(''),activityRef=useRef(activityFrom(events,running)),redraw=useRef(()=>{})
@@ -45,7 +39,10 @@ export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,st
   const navigator=useRef(new CharacterTravel()),travel=useRef<TravelPose>(navigator.current.snapshot())
   const liveHome=useRef(.52)
   useEffect(()=>{navigator.current=new CharacterTravel();travel.current=navigator.current.snapshot()},[sessionId])
-  const activity=useMemo(()=>activityFrom(events,running),[events,running]);activityRef.current=activity
+  const activity=useMemo(()=>activityFrom(events,running),[events,running])
+  const [displayPhase,setDisplayPhase]=useState(activity.phase),actionSchedule=useRef(new ActionSchedule())
+  activityRef.current={...activity,phase:displayPhase}
+  useEffect(()=>{actionSchedule.current=new ActionSchedule()},[sessionId])
   const deck=useMemo(()=>new SceneDeck(prefs.style==='all'?['all']:['pixel art'],prefs.theme),[sessionId,prefs.style,prefs.theme])
   const active=(running||demo)&&config.enabled&&!prefs.compact&&visible&&!pausedPreview
   const activeRef=useRef(active);activeRef.current=active
@@ -60,6 +57,15 @@ export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,st
     return builtinArchiveFromResponse(id,response.value)
   },[call])
   const library=useResourcePacks(prefs,settings,readArchive),resourcesRef=useRef(library.resources);resourcesRef.current=library.resources
+  const native=useRef<AnimationSprites>()
+  const needNative=library.loaded&&!library.busy&&!library.resources.character&&(prefs.characterPackId===DEFAULT_CHARACTER_ID||!!library.error)
+  useEffect(()=>{
+    if(library.resources.character){native.current=undefined;return}
+    if(!needNative)return
+    let alive=true
+    void loadNativeSprites(readArchive).then(value=>{if(alive){native.current=value;redraw.current()}}).catch(()=>{if(alive)setStatus(t('error'))})
+    return()=>{alive=false}
+  },[needNative,library.resources.character,readArchive,t])
   const previousCharacter=useRef<LoadedCharacter>(),formTransition=useRef<{from:LoadedCharacter;at:number}>()
   const workTransition=useRef<{from:LoadedCharacter;action:PackAction;time:number;at:number}>()
   useEffect(()=>{
@@ -70,15 +76,15 @@ export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,st
     let id=0
     const tick=()=>{if(formTransition.current&&performance.now()-formTransition.current.at>=FORM_TRANSITION_MS)formTransition.current=undefined;redraw.current();if(formTransition.current)id=requestAnimationFrame(tick)}
     tick();return()=>cancelAnimationFrame(id)
-  },[library.resources,reducedMotion,pausedPreview])
+  },[library.resources.character,reducedMotion,pausedPreview])
   useEffect(()=>{
     const character=resourcesRef.current.character,data=canvas.current?.dataset,from=data?.clip as PackAction|undefined
-    const entering=activity.phase==='agents'&&(running||demo)
+    const entering=displayPhase==='agents'&&(running||demo)
     workTransition.current=!reducedMotion&&!pausedPreview&&character?.spec.actions.agents&&from&&((entering&&from!=='agents')||(!entering&&from==='agents'))?{from:character,action:from,time:Number(data?.motionTime)||0,at:performance.now()}:undefined
     let id=0
     const tick=()=>{if(workTransition.current&&performance.now()-workTransition.current.at>=450)workTransition.current=undefined;redraw.current();if(workTransition.current)id=requestAnimationFrame(tick)}
     tick();return()=>cancelAnimationFrame(id)
-  },[activity.phase,running,demo,reducedMotion,pausedPreview])
+  },[displayPhase,running,demo,reducedMotion,pausedPreview])
   useEffect(()=>{try{localStorage.setItem('dsh-toons:v1',JSON.stringify(prefs))}catch{/* Storage may be unavailable in an embedded webview. */}},[prefs])
   useEffect(()=>{const onVisibility=()=>setVisible(!document.hidden);document.addEventListener('visibilitychange',onVisibility);return()=>document.removeEventListener('visibilitychange',onVisibility)},[])
   useEffect(()=>{
@@ -93,14 +99,11 @@ export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,st
   useEffect(()=>{let alive=true;void call('toons/config',{}).then(r=>{if(alive&&r.ok&&r.value&&typeof r.value==='object'){const c=r.value as Record<string,unknown>;setConfig({enabled:c.enabled!==false,fps:typeof c.fps==='number'?c.fps:20,intervalMs:typeof c.intervalMs==='number'?c.intervalMs:60000});if(!savedSource.current&&c.source==='mix')setPrefs(previous=>({...previous,source:'mix'}));savedSource.current=true}}).catch(()=>{if(alive){setConfig({enabled:true,fps:20,intervalMs:60000});setStatus(t('fallback'))}});return()=>{alive=false}},[call,t])
   useEffect(()=>{
     let alive=true
-    const load=(src:string)=>new Promise<HTMLImageElement>((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Sprite image unavailable'));image.src=src})
-    const urls:Record<Action,string>={idle:idleUrl,think:thinkUrl,read:readUrl,type:typeUrl,search:searchUrl,check:checkUrl,success:successUrl,failed:failedUrl,'walk-left':walkingUrl,'walk-right':walkingUrl}
-    void Promise.all(Object.entries(urls).map(async([action,url])=>[action,await load(url)] as const)).then(entries=>{
-      if(!alive)return
-      const animations=actionSheets(Object.fromEntries(entries) as Record<Action,HTMLImageElement>),image=animations.idle.image,crops:Parameters<typeof paint>[3]=[]
+    try{
       const url=URL.createObjectURL(new Blob([workerSource],{type:'text/javascript'})),w=new Worker(url)
       URL.revokeObjectURL(url);worker.current=w
       let lastFrame:Parameters<typeof paint>[1]|undefined
+      let lastPaint:{frame:unknown;resources:unknown;native:unknown;key:string}|undefined,paintCount=0
       const logicalCanvas=document.createElement('canvas')
       redraw.current=()=>{const target=canvas.current;if(!lastFrame||!target)return
         // The bitmap always matches the frame's grid, so cells stay 8x14 and the
@@ -113,27 +116,35 @@ export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,st
         const smooth=resourcesRef.current.character?.spec.rendering==='smooth'||!!formTransition.current
         const ratio=smooth?Math.min(4,Math.max(1,(stage.current?.clientWidth??width)/width*(window.devicePixelRatio||1))):1
         const displayWidth=Math.round(width*ratio),displayHeight=Math.round(height*ratio)
+        const a=activityRef.current,tr=travel.current,clock=motion.current
+        const key=[displayWidth,displayHeight,a.phase,a.outcome,clock.working,clock.playing,Math.floor(clock.time*8),Math.floor(clock.outcomeAge*8),tr.walking,tr.facing,Math.round(tr.x*width),Math.floor(tr.seconds*8)].join(':')
+        const force=!!formTransition.current||!!workTransition.current||!!(resourcesRef.current.character&&!isBuiltinPack(resourcesRef.current.character.id))
+        if(!force&&lastPaint?.frame===lastFrame&&lastPaint.resources===resourcesRef.current&&lastPaint.native===native.current&&lastPaint.key===key)return
+        lastPaint=force?undefined:{frame:lastFrame,resources:resourcesRef.current,native:native.current,key}
         if(target.width!==displayWidth||target.height!==displayHeight){target.width=displayWidth;target.height=displayHeight}
         if(logicalCanvas.width!==width||logicalCanvas.height!==height){logicalCanvas.width=width;logicalCanvas.height=height}
         target.style.imageRendering=smooth?'auto':'pixelated'
         const drawing=smooth?logicalCanvas:target,g=drawing.getContext('2d'),presentation=smooth?target.getContext('2d')??undefined:undefined
-        if(g)paint(g,lastFrame,image,crops,activityRef.current.phase,activityRef.current.outcome,animations,motion.current,resourcesRef.current,travel.current,presentation,formTransition.current?{from:formTransition.current.from,progress}:workTransition.current?{...workTransition.current,progress:summonProgress}:undefined)
+        if(g)paint(g,lastFrame,native.current?.idle.image,[],activityRef.current.phase,activityRef.current.outcome,native.current,motion.current,resourcesRef.current,travel.current,presentation,formTransition.current?{from:formTransition.current.from,progress}:workTransition.current?{...workTransition.current,progress:summonProgress}:undefined)
         if(smooth){for(const key of Object.keys(target.dataset))delete target.dataset[key];Object.assign(target.dataset,logicalCanvas.dataset)}
-        target.dataset.rendering=smooth?'smooth':'pixelated';target.dataset.transition=formTransition.current?'scanning':'none';target.dataset.transitionProgress=String(progress);target.dataset.workTransition=workTransition.current?'scanning':'none'}
+        target.dataset.rendering=smooth?'smooth':'pixelated';target.dataset.transition=formTransition.current?'scanning':'none';target.dataset.transitionProgress=String(progress);target.dataset.workTransition=workTransition.current?'scanning':'none';target.dataset.drawCount=String(++paintCount);target.dataset.nativeSprites=String(!!native.current)}
       w.onmessage=e=>{if(!alive)return;const message=e.data;if(message.type==='frame'){lastFrame=message;const m=message.mascots[0];if(!message.preset&&m)liveHome.current=(m.x+7*Math.max(.3,Math.min(2,m.look.scale)))/message.cols;if(!motion.current.playing)redraw.current()}else if(message.type==='broken'){setStatus(fallbackCaption(t('fallback'),'animation-error'));recoverScene()}}
       w.onerror=()=>{if(alive)setStatus(t('error'))};setReady(true)
-    }).catch(()=>{if(alive)setStatus(t('error'))})
+    }catch{if(alive)setStatus(t('error'))}
     return()=>{alive=false;setReady(false);worker.current?.terminate();worker.current=undefined;redraw.current=()=>{}}
   },[sessionId,t,recoverScene])
-  useEffect(()=>{motion.current={time:0,outcomeAge:0,playing:false,working:running||demo}},[activity.phase,activity.outcome,activity.turn,running,demo])
+  useEffect(()=>{motion.current={time:0,outcomeAge:0,playing:false,working:running||demo}},[displayPhase,activity.outcome,activity.turn,running,demo])
   useEffect(()=>{
     if(!ready)return
     let id=0,last=performance.now()
     const advance=(delta:number)=>{
+      const playing=config.enabled&&visible&&!prefs.compact&&!pausedPreview&&!reducedMotion
+      const phase=actionSchedule.current.advance({phase:activity.phase,turn:activity.turn,working:running||demo,outcome:activity.outcome,delta,playing,immediate:immediateActions||!playing})
+      if(phase!==displayPhase){setDisplayPhase(phase);return}
       motion.current=advanceMotion(motion.current,delta,running||demo,config.enabled&&visible&&!prefs.compact&&!pausedPreview,reducedMotion,activity.outcome)
       const target=canvas.current,resources=resourcesRef.current,actions=resources?.character?.spec.actions
-      const stationary=stationaryPreview||((running||demo)&&!!actions?.agents&&['testing','building','git','agents'].includes(activity.phase))
-      if(target)travel.current=navigator.current.advance({delta,playing:motion.current.playing,working:running||demo,phase:activity.phase,reacting:(activity.outcome==='success'||activity.outcome==='failed')&&motion.current.outcomeAge<packReactionSeconds(resources?.character?.spec,activity.outcome),...bitmapSize(columnsRef.current),home:resources?.scene?.spec.centerX??(scene?.preset ? .52 : liveHome.current),canWalk:!stationary&&(!(running||demo)||!!(scene?.preset||resources?.scene))&&(!actions||!!(actions['walk-left']||actions['walk-right'])),direction:walkPreview})
+      const stationary=stationaryPreview||((running||demo)&&!!actions?.agents&&['testing','building','git','agents'].includes(displayPhase))
+      if(target)travel.current=navigator.current.advance({delta,playing:motion.current.playing,working:running||demo,phase:displayPhase,reacting:(activity.outcome==='success'||activity.outcome==='failed')&&motion.current.outcomeAge<packReactionSeconds(resources?.character?.spec,activity.outcome),...bitmapSize(columnsRef.current),home:resources?.scene?.spec.centerX??(scene?.preset ? .52 : liveHome.current),canWalk:!stationary&&(!(running||demo)||!!(scene?.preset||resources?.scene))&&(!actions||!!(actions['walk-left']||actions['walk-right'])),direction:walkPreview})
       redraw.current()
     }
     const tick=(now:number)=>{
@@ -145,7 +156,7 @@ export function Strip({sessionId,running,events,call,t,demo=false,walkPreview,st
     advance(0)
     if(motion.current.playing)id=requestAnimationFrame(tick)
     return()=>cancelAnimationFrame(id)
-  },[running,demo,config.enabled,visible,prefs.compact,reducedMotion,ready,activity.phase,activity.outcome,scene,walkPreview,stationaryPreview,pausedPreview])
+  },[running,demo,config.enabled,visible,prefs.compact,reducedMotion,ready,displayPhase,activity.phase,activity.outcome,scene,walkPreview,stationaryPreview,pausedPreview,immediateActions])
   useEffect(()=>redraw.current(),[activity.phase,activity.outcome,prefs.compact])
   useEffect(()=>{
     if(!scene||!ready||!worker.current)return
@@ -219,6 +230,16 @@ const CSS=`
 .toons-resource-heading p{margin:4px 0 0;opacity:.6;font-size:11px}
 .toons-resource-actions{display:flex;gap:6px;flex-shrink:0}
 .dsh-toons .toons-import{background:#315f99;border-color:#315f99;color:#fff}
+.toons-character-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:9px;margin:14px 0}
+.toons-character-card{min-width:0;border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:7px;padding:5px;background:color-mix(in srgb,currentColor 2%,transparent)}
+.toons-character-card.is-selected{border-color:#4388e4;background:color-mix(in srgb,#4388e4 8%,transparent)}
+.dsh-toons .toons-character-choice{display:flex;align-items:center;flex-direction:column;width:100%;border:0;padding:7px 3px;gap:3px;min-height:113px}
+.toons-character-choice img{display:block;width:64px;height:64px;object-fit:contain}
+.toons-character-choice strong{font-weight:600}.toons-character-choice>span{font-size:10px;opacity:.65;text-align:center}
+.toons-character-placeholder{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:color-mix(in srgb,#4388e4 12%,transparent);font-size:20px!important}
+.toons-card-forms{display:flex;justify-content:center;gap:4px}.dsh-toons .toons-card-forms button{padding:3px 9px;font-size:10px}
+.dsh-toons .toons-card-forms button[aria-pressed=true]{background:#315f99;border-color:#315f99;color:#fff}
+.toons-character-state{display:block;text-align:center;min-height:22px;font-size:10px;color:#4388e4}
 .toons-resource-selects{display:flex;align-items:flex-end;gap:10px}
 .toons-resource-selects label{flex:1;min-width:0;font-size:11px;opacity:.9}
 .toons-resource-selects select{display:block;width:100%;margin-top:5px;min-width:0}
