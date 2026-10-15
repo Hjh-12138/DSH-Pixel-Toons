@@ -1,0 +1,51 @@
+name: Plugin checks
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run characters:check
+      - run: npm run package:check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plugin-verification
+          path: |
+            work/browser-tests/
+            work/character-review/overview.png
+            work/character-review/validation.json
+            work/package-check/validation.json
+            work/package-check/*.tgz
+          retention-days: 7
+  windows-updater:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+      - name: Isolated updater integration checks
+        shell: powershell
+        run: .\tests\desktop-updater.test.ps1

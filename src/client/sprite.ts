@@ -120,7 +120,7 @@ export function poseFor(m:MascotDraw,phase:Phase,t:number,outcome:string):Pose {
   return phase==='thinking'?'think':'idle'
 }
 /** Paint the engine grid and fixed portrait sprites using nearest-neighbor scaling. */
-export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:number;rows:number;mascots:MascotDraw[];t:number;preset?:PixelPreset;direction?:SceneDirection},image:HTMLImageElement,crops:Crop[],phase:Phase,outcome:string,animations?:AnimationSprites,clock?:MotionClock,resources?:PackResources,travel?:TravelPose,presentation?:CanvasRenderingContext2D,transition?:FormTransition):void {
+export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:number;rows:number;mascots:MascotDraw[];t:number;preset?:PixelPreset;direction?:SceneDirection},image:HTMLImageElement|undefined,crops:Crop[],phase:Phase,outcome:string,animations?:AnimationSprites,clock?:MotionClock,resources?:PackResources,travel?:TravelPose,presentation?:CanvasRenderingContext2D,transition?:FormTransition):void {
   if((!frame.preset&&!resources?.scene&&clock?.working!==false)||(resources?.character&&!resources.character.spec.actions['walk-left']&&!resources.character.spec.actions['walk-right']))travel=undefined
   const cw=g.canvas.width/frame.cols,ch=g.canvas.height/frame.rows,clear=0x01000000
   g.clearRect(0,0,g.canvas.width,g.canvas.height);g.imageSmoothingEnabled=false
@@ -221,13 +221,14 @@ export function paint(g:CanvasRenderingContext2D,frame:{cells:Uint32Array;cols:n
       if(m===mascots[0]&&g.canvas.dataset){g.canvas.dataset.characterX=String(Math.round(x));g.canvas.dataset.characterY=String(Math.round(y))}
       continue
     }
+    if(!image||!crops.length)continue
     const pose=poseFor(m,phase,frame.t,outcome),crop=crops[POSES.indexOf(pose)]!
     // All poses share the standing sprite's pixel scale, so prone poses stay shorter.
     const scale=Math.max(.3,Math.min(2,m.look.scale)),unit=Math.min(heroMaxHeight,12*scale*ch/2)/crops[0]!.h,height=unit*crop.h,width=unit*crop.w
     const foot=Math.min(g.canvas.height-2,Math.max(height,(m.py+8*scale)*ch/2))
     const x=Math.max(0,Math.min(g.canvas.width-width,(m.x+7*scale)*cw-width/2))
     const bob=pose.startsWith('walk')?Math.round(Math.sin(frame.t*12)*1.5):Math.round(Math.sin(frame.t*3))
-    g.drawImage(image,crop.x,crop.y,crop.w,crop.h,Math.round(x),Math.round(foot-height+bob),Math.round(width),Math.round(height))
+    if(image)g.drawImage(image,crop.x,crop.y,crop.w,crop.h,Math.round(x),Math.round(foot-height+bob),Math.round(width),Math.round(height))
   }
   if(localScene?.foreground)paintPackLayer(g,localScene,localScene.foreground)
   if(speech)paintDirectionBubble(g,speech)

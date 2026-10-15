@@ -1,6 +1,6 @@
 # 内置角色与行走素材 · 0.1.27
 
-原生 Deep seek、六个附加角色，以及鲸鱼娘像素／高清形态的素材均随插件安装，无需外网或模型调用。在动画条下方展开「本地资源」即可选择，角色与场景分别保存。原生 Deep seek 与六个附加角色各有十种八帧动作；鲸鱼娘的高清、像素均有独立构建、Git、协作，共十三种八帧动作。未保存选择和「恢复默认」使用鲸鱼娘像素形态；显式选择「默认 · Deep seek」会保留原生蓝眼睛、蓝白女仆装角色。
+原生 Deep seek、六个附加角色，以及鲸鱼娘像素／高清形态的素材均随插件安装，无需外网或模型调用。在动画条下方展开「本地资源」即可选择，角色与场景分别保存。原生 Deep seek 与六个附加角色各有十种八帧动作；鲸鱼娘的高清、像素均有独立构建、Git、协作，共十三种八帧动作。未保存选择和「恢复初始设置」使用鲸鱼娘像素形态；显式选择「Deep seek」会保留原生蓝眼睛、蓝白女仆装角色。
 
 ![六个附加角色的当前行走效果](screenshots/character-walks-v0124.gif)
 
@@ -8,9 +8,9 @@
 
 显示名称只用于界面和资源包描述。内置选择使用 `builtin-` 前缀，与用户自行导入的角色分开；原有 ID 和选择配置继续有效。
 
-| 显示名称 | 素材目录／ZIP ID | 界面内置选择 ID | 行走帧时长 |
+| 角色／形态 | 素材目录／ZIP ID | 界面内置选择 ID | 行走帧时长 |
 | --- | --- | --- | --- |
-| 默认 · Deep seek | 原生 `assets/animations/` | `default-deepseek` | 125 毫秒 |
+| Deep seek | 原生 `assets/animations/` | `default-deepseek` | 125 毫秒 |
 | Kimi | `silver-music` | `builtin-silver-music` | 125 毫秒 |
 | Gemini | `purple-star-cat` | `builtin-purple-star-cat` | 125 毫秒 |
 | Claude | `orange-flower` | `builtin-orange-flower` | 125 毫秒 |
@@ -22,7 +22,7 @@
 
 六个附加角色和鲸鱼娘两种形态首次选择时从当前 Harness Host 读取已安装的归档，校验并解包后在本次客户端运行期间复用，不写入用户导入资源库。尚未加载的角色需要 Host 连接才能首次读取；缓存不作为跨刷新保存的资源库。可导入的完整包在 `examples/character-packs/<ID>.toons.zip`，格式见 [本地资源包说明](../docs/local-resource-packs.md)。
 
-正式插件使用 Harness 原生认证的 `toons/builtin-pack` 接口，Host 只读取精确允许列表中的八个归档，不接受调用方提供的路径或 URL。接口返回有大小限制的 base64；客户端在分配解码字节前检查 ID、编码格式与大小，再校验 ZIP 和 manifest。角色加载不访问外网，也不调用模型。客户端构建产物不内嵌这些 ZIP。预览页单独使用 `src/preview-pack-assets.ts` 提供本地 ZIP，隔离于正式客户端。
+正式插件使用 Harness 原生认证的 `toons/builtin-pack` 接口，Host 只读取精确允许列表中的八份角色包与一份原生动作归档，不接受调用方提供的路径或 URL。接口返回有大小限制的 base64；客户端在分配解码字节前检查 ID、编码格式与大小，再校验 ZIP 内容。角色加载不访问外网，也不调用模型。客户端构建产物不内嵌完整角色素材。原生PNG在构建时转为RGBA无损WebP归档，仅选择原生角色或需要回退时加载；其他角色复用已解码缓存。预览页单独使用 `src/preview-pack-assets.ts` 提供本地 ZIP，隔离于正式客户端。包体与缓存细节见[加载说明](../docs/performance.md)。
 
 ## 当前步态与分层
 

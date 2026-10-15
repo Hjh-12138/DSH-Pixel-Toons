@@ -2,7 +2,7 @@
 
 在「本地资源」选择「鲸鱼娘 · 像素」或「鲸鱼娘 · 高清」，再使用动画条上的形态按钮切换。扫描光从上向下显现新形态，历时 650 毫秒，保留任务阶段、播放时钟与当前场景；系统开启“减少动态效果”时直接切换。未保存角色选择时默认使用像素形态。
 
-原生「默认 · Deep seek」是另一入口：蓝眼睛、蓝白女仆装，使用 `assets/animations/` 中的素材与稳定选择 ID `default-deepseek`。它的小步行走从原待机像素拆层，见[比例对齐记录](deepseek-walk-aligned-v1/README.md)。
+原生「Deep seek」是另一入口：蓝眼睛、蓝白女仆装，使用 `assets/animations/` 中的素材与稳定选择 ID `default-deepseek`。它的小步行走从原待机像素拆层，见[比例对齐记录](deepseek-walk-aligned-v1/README.md)。
 
 ![高清十三套动作的统一人物总览](whale-consistency-v2/after-overview.png)
 

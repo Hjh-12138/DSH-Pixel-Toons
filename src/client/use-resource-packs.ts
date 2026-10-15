@@ -6,6 +6,9 @@ import exampleUrl from '../../examples/mint-robot.toons.zip'
 import {builtinPacks,isBuiltinPack,resolveLibraryPack,withBuiltinPacks,type BuiltinArchiveReader} from './builtin-packs'
 import {DEFAULT_CHARACTER_ID} from '../character-names'
 import {resolveCharacterSelection} from './character-selection'
+import {decodedCache,packResourceBytes} from './decoded-cache'
+
+const cacheKey=(pack:LocalPack)=>`pack:${pack.id}:${pack.importedAt}:${JSON.stringify(pack.manifest)}`
 
 export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Preferences>)=>void,readArchive:BuiltinArchiveReader){
   const [packs,setPacks]=useState<LocalPack[]>(builtinPacks),[loaded,setLoaded]=useState(false),[resources,setResources]=useState<PackResources>({})
@@ -25,7 +28,7 @@ export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Pref
     setResolving(true)
     const {pack:character,missing:missingCharacter}=resolveCharacterSelection(packs,prefs.characterPackId),scene=packs.find(p=>p.id===prefs.scenePackId&&p.manifest.scene)
     const selected=[...new Set([character,scene].filter((p):p is LocalPack=>!!p))]
-    void Promise.all(selected.map(async pack=>({id:pack.id,resources:await loadPackResources(await resolveLibraryPack(pack,readArchive))}))).then(results=>{
+    void Promise.all(selected.map(async pack=>({id:pack.id,resources:await decodedCache.load(cacheKey(pack),async()=>loadPackResources(await resolveLibraryPack(pack,readArchive)),packResourceBytes)}))).then(results=>{
       if(canceled)return
       setResources({character:results.find(p=>p.id===character?.id)?.resources.character,scene:results.find(p=>p.id===scene?.id)?.resources.scene})
       // A failed IndexedDB read does not establish that a saved pack was removed.
@@ -49,7 +52,9 @@ export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Pref
       const pack=await readLocalPack(file)
       if(isBuiltinPack(pack.id)||pack.id===DEFAULT_CHARACTER_ID)throw new Error('这个 ID 用于内置角色，请修改资源包 ID 后再导入')
       // Validate every image and frame before replacing an existing pack with the same ID.
-      await loadPackResources(pack);await saveLocalPack(pack)
+      const validated=await loadPackResources(pack);await saveLocalPack(pack)
+      decodedCache.invalidate(`pack:${pack.id}:`)
+      await decodedCache.load(cacheKey(pack),async()=>validated,packResourceBytes)
       if(alive.current){setPacks(previous=>[pack,...previous.filter(p=>p.id!==pack.id)]);setLoaded(true);apply(pack);setMessage(`已导入并应用「${pack.manifest.name}」`)}
     }catch(e){if(alive.current)setError(e instanceof Error?e.message:'导入失败，请检查资源包')}
     finally{operation.current=false;if(alive.current)setBusy(false)}
@@ -63,6 +68,7 @@ export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Pref
     operation.current=true;setBusy(true);setError('')
     try{
       await deleteLocalPack(pack.id)
+      decodedCache.invalidate(`pack:${pack.id}:`)
       if(alive.current){
         settingsRef.current({...(prefs.characterPackId===pack.id?{characterPackId:undefined}:{}),...(prefs.scenePackId===pack.id?{scenePackId:undefined}:{})})
         setMessage(`已删除「${pack.manifest.name}」`);await refresh()
