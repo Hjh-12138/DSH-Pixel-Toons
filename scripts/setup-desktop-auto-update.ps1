@@ -33,9 +33,16 @@ $config = [ordered]@{
 }
 $config | ConvertTo-Json | Set-Content -LiteralPath $configPath -Encoding UTF8
 
-$powershellPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$taskArguments = '-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}" -ConfigPath "{1}"' -f $updater, $configPath
-$action = New-ScheduledTaskAction -Execute $powershellPath -Argument $taskArguments -WorkingDirectory $stateRoot
+# A GUI-subsystem launcher prevents the initial console flash that occurs when
+# Task Scheduler directly starts powershell.exe, even with -WindowStyle Hidden.
+$launcherSource = Join-Path $PSScriptRoot 'desktop-updater-launcher.cs'
+$launcherHash = (Get-FileHash -LiteralPath $launcherSource -Algorithm SHA256).Hash.Substring(0, 16).ToLowerInvariant()
+$launcherPath = Join-Path $stateRoot ('toons-updater-' + $launcherHash + '.exe')
+if (-not (Test-Path -LiteralPath $launcherPath -PathType Leaf)) {
+    Add-Type -TypeDefinition (Get-Content -LiteralPath $launcherSource -Raw) -OutputAssembly $launcherPath -OutputType WindowsApplication
+}
+$taskArguments = '"{0}" "{1}"' -f $updater, $configPath
+$action = New-ScheduledTaskAction -Execute $launcherPath -Argument $taskArguments -WorkingDirectory $stateRoot
 $repeatTrigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(1)) -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes)
 $userId = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 $logonTrigger = New-ScheduledTaskTrigger -AtLogOn -User $userId

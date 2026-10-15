@@ -4,6 +4,8 @@ import {deleteLocalPack,listLocalPacks,PACKS_CHANGED,saveLocalPack} from './reso
 import type {Preferences} from './preferences'
 import exampleUrl from '../../examples/mint-robot.toons.zip'
 import {builtinPacks,isBuiltinPack,resolveLibraryPack,withBuiltinPacks,type BuiltinArchiveReader} from './builtin-packs'
+import {DEFAULT_CHARACTER_ID} from '../character-names'
+import {resolveCharacterSelection} from './character-selection'
 
 export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Preferences>)=>void,readArchive:BuiltinArchiveReader){
   const [packs,setPacks]=useState<LocalPack[]>(builtinPacks),[loaded,setLoaded]=useState(false),[resources,setResources]=useState<PackResources>({})
@@ -21,14 +23,14 @@ export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Pref
     if(!loaded||busy)return
     let canceled=false
     setResolving(true)
-    const character=packs.find(p=>p.id===prefs.characterPackId&&p.manifest.character),scene=packs.find(p=>p.id===prefs.scenePackId&&p.manifest.scene)
+    const {pack:character,missing:missingCharacter}=resolveCharacterSelection(packs,prefs.characterPackId),scene=packs.find(p=>p.id===prefs.scenePackId&&p.manifest.scene)
     const selected=[...new Set([character,scene].filter((p):p is LocalPack=>!!p))]
     void Promise.all(selected.map(async pack=>({id:pack.id,resources:await loadPackResources(await resolveLibraryPack(pack,readArchive))}))).then(results=>{
       if(canceled)return
       setResources({character:results.find(p=>p.id===character?.id)?.resources.character,scene:results.find(p=>p.id===scene?.id)?.resources.scene})
       // A failed IndexedDB read does not establish that a saved pack was removed.
-      if(enumerated&&((prefs.characterPackId&&!character)||(prefs.scenePackId&&!scene))){
-        settingsRef.current({characterPackId:character?.id,scenePackId:scene?.id});setError('之前选择的资源包已移除，已恢复对应的默认素材')
+      if(enumerated&&(missingCharacter||(prefs.scenePackId&&!scene))){
+        settingsRef.current({characterPackId:prefs.characterPackId===DEFAULT_CHARACTER_ID?DEFAULT_CHARACTER_ID:character?.id,scenePackId:scene?.id});setError('之前选择的资源包已移除，已恢复对应的默认素材')
       }
     }).catch(e=>{
       if(canceled)return
@@ -45,7 +47,7 @@ export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Pref
     operation.current=true;setBusy(true);setError('');setMessage('')
     try{
       const pack=await readLocalPack(file)
-      if(isBuiltinPack(pack.id))throw new Error('这个 ID 用于内置角色，请修改资源包 ID 后再导入')
+      if(isBuiltinPack(pack.id)||pack.id===DEFAULT_CHARACTER_ID)throw new Error('这个 ID 用于内置角色，请修改资源包 ID 后再导入')
       // Validate every image and frame before replacing an existing pack with the same ID.
       await loadPackResources(pack);await saveLocalPack(pack)
       if(alive.current){setPacks(previous=>[pack,...previous.filter(p=>p.id!==pack.id)]);setLoaded(true);apply(pack);setMessage(`已导入并应用「${pack.manifest.name}」`)}
@@ -68,7 +70,7 @@ export function useResourcePacks(prefs:Preferences,settings:(change:Partial<Pref
     }catch(e){if(alive.current)setError(e instanceof Error?e.message:'删除失败')}
     finally{operation.current=false;if(alive.current)setBusy(false)}
   }
-  const chooseCharacter=(id:string)=>{setError('');setMessage('');settingsRef.current({characterPackId:id||undefined})}
+  const chooseCharacter=(id:string)=>{setError('');setMessage('');settingsRef.current({characterPackId:id||DEFAULT_CHARACTER_ID})}
   const chooseScene=(id:string)=>{setError('');setMessage('');settingsRef.current({scenePackId:id||undefined,...(id?{source:'ready-made only' as const}:{})})}
   const reset=()=>{setError('');setMessage('已恢复默认人物和预制场景');settingsRef.current({characterPackId:undefined,scenePackId:undefined,source:'ready-made only'})}
   return {packs,resources,busy:busy||resolving,error,message,loaded,apply,importFile,tryExample,remove,chooseCharacter,chooseScene,reset}

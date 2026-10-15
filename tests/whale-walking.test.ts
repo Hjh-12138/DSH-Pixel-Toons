@@ -1,100 +1,100 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import {pngPixels} from './helpers/png'
-import {animationBoundsFromPixels} from '../src/client/sprite'
-import {thumbnail} from './helpers/sprite-pixels'
 
-const {pixels,width,height}=pngPixels(new URL('../assets/animations/walk.png',import.meta.url))
-const body=pngPixels(new URL('../design/whale-walk-body.png',import.meta.url)).pixels
-const bob=[0,1,0,-1,0,1,0,-1]
+const walking=pngPixels(new URL('../assets/animations/walk.png',import.meta.url))
+const idle=pngPixels(new URL('../assets/animations/idle.png',import.meta.url))
+const rig=JSON.parse(readFileSync(new URL('../design/deepseek-walk-aligned-v1/rig.json',import.meta.url),'utf8')) as {
+ sourceFrame:{w:number;h:number}
+ sourceOffset:{x:number;y:number}
+ floor:number
+ bob:number[]
+ gait:[number,number][][]
+ limbs:{hipY:number;ankleY:number;region:[number,number,number,number]}[]
+}
+const {pixels,width,height}=walking,{x:offsetX,y:offsetY}=rig.sourceOffset
 const pixel=(frame:number,x:number,y:number)=>((Math.floor(frame/4)*512+y)*width+frame%4*512+x)*4
+const legs=Array.from({length:8},(_,f)=>['near','far'].map(side=>
+ pngPixels(new URL(`../design/deepseek-walk-aligned-v1/legs/${side}/${f+1}.png`,import.meta.url))))
 
-test('whale walking keeps both eyes visible in every near-front phase',()=>{
+test('default Deep seek keeps both blue eyes visible in every near-front walking phase',()=>{
  assert.equal(width,2048);assert.equal(height,1024)
  for(let f=0;f<8;f++){
   const eyes=[0,0]
-  for(let y=199;y<237;y++)for(let x=174;x<284;x++){
-   const at=pixel(f,x,y+bob[f]!),r=pixels[at]!,g=pixels[at+1]!,b=pixels[at+2]!
-   if(pixels[at+3]!>80&&b>140&&g>90&&b>r+60)eyes[x<225?0:1]!++
+  for(let y=203;y<235;y++)for(let x=151;x<279;x++){
+   const at=pixel(f,x+offsetX,y+offsetY+rig.bob[f]!),r=pixels[at]!,g=pixels[at+1]!,b=pixels[at+2]!
+   if(pixels[at+3]!>80&&b>140&&g>90&&b>r+60)eyes[x<215?0:1]!++
   }
   assert.ok(eyes.every(n=>n>20),`frame ${f+1} must retain both blue eyes`)
  }
 })
 
-test('the highlighted left stocking travels forward, behind, and forward again',()=>{
- const positions=Array.from({length:8},(_,f)=>{
-  let sum=0,count=0
-  // Inspect the exposed calf, excluding the fixed white hem and the newly
-  // rounded shoes' pale toe highlights below it.
-  for(let y=421;y<428;y++)for(let x=180;x<305;x++){
-   const at=pixel(f,x,y),r=pixels[at]!,g=pixels[at+1]!,b=pixels[at+2]!
-   if(pixels[at+3]!>80&&r>220&&g>210&&b>200){sum+=x;count++}
-  }
-  assert.ok(count>10,`left stocking must be readable in frame ${f+1}`)
-  return sum/count
- })
- assert.ok(positions[4]!-positions[0]!>30,'the light left leg must move from front to rear')
- assert.ok(positions[7]!<positions[4]!-25,'the light left leg must extend forward before contact')
- let raisedHighlight=0
- for(let y=415;y<440;y++)for(let x=260;x<305;x++){
-  const at=pixel(5,x,y)
-  if(pixels[at+3]!>80&&pixels[at]!>220&&pixels[at+1]!>210&&pixels[at+2]!>200)raisedHighlight++
- }
- assert.ok(raisedHighlight>80,'the recovering rear left stocking must stay highlighted')
- assert.ok(positions[6]!<positions[4]!-25,'the left highlight must pass forward on the raised leg')
-})
-
-test('walking calves and planted shoes retain the standing chibi proportions',()=>{
- const idle=pngPixels(new URL('../assets/animations/idle.png',import.meta.url))
- const standing=animationBoundsFromPixels(idle.pixels,idle.width,idle.height,[0,1])
- const walking=animationBoundsFromPixels(pixels,width,height,[0,1])
- const bootWidth=(p:ReturnType<typeof pngPixels>,crop:{x:number;y:number;w:number;h:number},band=10)=>{
-  let widest=0
-  // The raised shoe overlaps the supporting shoe higher up during passing.
-  // Only the lower sole band measures one planted shoe rather than both feet.
-  for(let y=crop.y+crop.h-band;y<crop.y+crop.h;y++){
-   let start=-1
-   for(let x=crop.x;x<=crop.x+crop.w;x++){
-    const ink=x<crop.x+crop.w&&p.pixels[(y*p.width+x)*4+3]!>128
-    if(ink&&start<0)start=x
-    if(!ink&&start>=0){widest=Math.max(widest,x-start);start=-1}
-   }
-  }
-  return widest
- }
- // Use the full rounded standing toe; its very bottom narrows substantially.
- const standingWidth=bootWidth(idle,standing.frames[0]!.crop,21)*80/standing.referenceHeight
- for(const frame of walking.frames){
-  const walkWidth=bootWidth({pixels,width,height},frame.crop)*80/walking.referenceHeight
-  assert.ok(walkWidth<=standingWidth*1.15,'walking must not enlarge a supporting shoe')
- }
- const lowerLegHeight=(walking.frames[0]!.crop.y+walking.frames[0]!.crop.h-415)*80/walking.referenceHeight
- assert.ok(lowerLegHeight<=11,'walking must not lengthen the visible calves')
-})
-
-test('the forward walking shoe retains the standing toe volume at actual display scale',()=>{
- const idle=pngPixels(new URL('../assets/animations/idle.png',import.meta.url))
- const standing=animationBoundsFromPixels(idle.pixels,idle.width,idle.height,[0,1])
- const walking=animationBoundsFromPixels(pixels,width,height,[0,1])
- const region={left:-14,right:-2,top:-6,bottom:0}
- const ink=(p:ReturnType<typeof pngPixels>,sheet:typeof walking)=>[...thumbnail(p,sheet.frames[0]!,80/sheet.referenceHeight,region)].filter(Boolean).length
- const ratio=ink({pixels,width,height},walking)/ink(idle,standing)
- assert.ok(ratio>=.9,`walking toe looks too small: ${ratio}`)
- assert.ok(ratio<=1.15,`walking toe looks too large: ${ratio}`)
-})
-
-test('hair, dress, hands and whale tail share one coherent body movement',()=>{
- // Check the complete visible body after removing the intentional one-pixel
- // bob, including the low curls and tail that formerly moved with the legs.
- for(let f=1;f<8;f++){
+test('default walking preserves the original idle face, hair, hands, dress and tail at one pixel scale',()=>{
+ // Compare against the standing artwork, including the low skirt and tail.
+ // Only the independently articulated original legs are excluded.
+ for(let f=0;f<8;f++){
   let checked=0
-  for(let y=1;y<480;y++)for(let x=0;x<512;x++){
-   if(y>=415&&x<340)continue // Articulating legs and their root/tail overlap.
-   const first=(y*512+x)*4,next=pixel(f,x,y+bob[f]!)
-   if(!body[first+3])continue // Transparent space can reveal a passing leg.
-   for(let channel=0;channel<4;channel++)assert.equal(pixels[next+channel],body[first+channel],`body drifts in frame ${f+1} at ${x},${y}`)
+  for(let y=0;y<rig.sourceFrame.h;y++)for(let x=0;x<rig.sourceFrame.w;x++){
+   if(rig.limbs.some(({region:[x0,y0,x1,y1]})=>x>=x0&&x<x1&&y>=y0&&y<y1))continue
+   const source=(y*idle.width+x)*4
+   if(idle.pixels[source+3]!<128)continue
+   const target=pixel(f,x+offsetX,y+offsetY+rig.bob[f]!)
+   for(let c=0;c<4;c++)assert.equal(pixels[target+c],idle.pixels[source+c],`standing body changed in frame ${f+1} at ${x},${y}`)
    checked++
   }
-  assert.ok(checked>60000,'the comparison must include the whole body, not only the face')
+  assert.ok(checked>85000,'compare the complete original body and clothing')
+ }
+})
+
+test('each original shoe keeps its complete shape, material and size through all eight phases',()=>{
+ for(let f=0;f<8;f++)for(let side=0;side<2;side++){
+  const layer=legs[f]![side]!,limb=rig.limbs[side]!,[dx,dy]=rig.gait[f]![side]!
+  let checked=0
+  // Below the ankle the complete original shoe must only translate. Include
+  // antialiased pixels as well as its solid toe, strap and white highlight.
+  for(let y=limb.ankleY;y<=434;y++)for(let x=limb.region[0];x<limb.region[2];x++){
+   const source=(y*idle.width+x)*4
+   if(!idle.pixels[source+3])continue
+   const target=((y+offsetY+dy)*layer.width+x+offsetX+dx)*4
+   for(let c=0;c<4;c++)assert.equal(layer.pixels[target+c],idle.pixels[source+c],`shoe ${side+1} changes shape or colour in frame ${f+1}`)
+   checked++
+  }
+  assert.ok(checked>1200,'the comparison must include the entire original shoe')
+ }
+})
+
+test('the two original feet alternate support without any airborne frame',()=>{
+ for(let f=0;f<8;f++){
+  const bottoms=legs[f]!.map(layer=>{
+   let bottom=-1
+   for(let y=400;y<layer.height;y++)for(let x=170;x<330;x++)if(layer.pixels[(y*layer.width+x)*4+3]!>80)bottom=y
+   return bottom
+  })
+  const support=f<4?0:1,swing=1-support
+  assert.equal(bottoms[support],rig.floor,`the supporting shoe leaves the floor in frame ${f+1}`)
+  assert.ok(bottoms[swing]!<rig.floor,`the other foot must recover in frame ${f+1}`)
+  let contacts=0
+  for(let x=170;x<330;x++)if(pixels[pixel(f,x,rig.floor)+3]!>80)contacts++
+  assert.ok(contacts>=10,`the shipped frame ${f+1} must have a planted sole`)
+ }
+})
+
+test('both walking feet remain connected to the unchanged body in every frame',()=>{
+ for(let f=0;f<8;f++){
+  const seen=new Uint8Array(512*512),queue=[(200+offsetY+rig.bob[f]!)*512+212+offsetX]
+  seen[queue[0]!]=1
+  for(let i=0;i<queue.length;i++){
+   const p=queue[i]!,x=p%512,y=Math.floor(p/512)
+   for(const [nx,ny]of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]){
+    if(nx!<0||nx!>=512||ny!<0||ny!>=512)continue
+    const next=ny!*512+nx!
+    if(!seen[next]&&pixels[pixel(f,nx!,ny!)+3]!>=80){seen[next]=1;queue.push(next)}
+   }
+  }
+  for(let side=0;side<2;side++){
+   const [dx,dy]=rig.gait[f]![side]!,shoe=(421+offsetY+dy)*512+(side?242:183)+offsetX+dx
+   assert.equal(seen[shoe],1,`shoe ${side+1} is detached from the body in frame ${f+1}`)
+  }
  }
 })

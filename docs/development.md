@@ -1,6 +1,6 @@
 # 开发与渲染说明
 
-本文记录 DeepSeek Toons 0.1.24 发布版的实现细节。Release 安装与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
+本文记录 DeepSeek Toons 0.1.26 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
 
 ## 从源码安装
 
@@ -45,6 +45,8 @@ npm run preview
 
 预览地址为 `http://127.0.0.1:3088/`。它复用插件组件、Worker、解释器和角色素材，支持切换动作、主题、暂停、收起／展开与本地资源。动态选项使用模拟导演编排展示背景、道具、特效和气泡，不调用模型。
 
+双形态预览可使用 `http://127.0.0.1:3088/?form=hd&action=agents`，也可选择 `pixel` 形态或 `testing`、`building`、`git` 等任务阶段。原生角色可用 `?character=default-deepseek&action=walk-left` 直接检查。非行走预览保持原地，便于逐帧检查工作姿势；明确选择左右行走时显示移动。正常运行时，具有独立协作动作的角色在测试、构建、Git 和协作阶段也保持工作站位。
+
 重新生成安装包：
 
 ```powershell
@@ -68,11 +70,13 @@ npm pack --pack-destination .\dist
 - `read.png`、`type.png`、`success.png`、`failed.png`：阅读、编辑、庆祝和失落。
 - `walk.png`：同一图集经水平镜像用于左右行走，共十种播放动作。
 
-七个内置角色的每种动作均有八帧，具体时长由动作表或资源包 manifest 决定。0.1.24 默认鲸鱼娘行走为每帧 75 毫秒，六个附加角色为每帧 100 毫秒；其他动作保留各自时长。素材结构与重建命令见[角色与行走说明](../design/character-walks.md)和[八帧动作设计](../design/eight-frame-animation.md)。
+原生 Deep seek、六个附加角色的十种动作，以及高清鲸鱼娘的十三种动作均使用 8 帧 × 125 毫秒。鲸鱼娘像素形态的左右行走也使用这一秒周期，其他动作仍按各自 manifest 播放。高清形态的 `build`、`git`、`agents` 为独立工作动作，旧包缺少时分别回退到 `check`、`check`、`search`，再按需回退到待机。素材结构与重建命令见[角色与行走说明](../design/character-walks.md)、[双形态说明](../design/whale-dual-forms.md)和[八帧动作设计](../design/eight-frame-animation.md)。
 
-裁切帧共享人物中心和脚底基线，趴姿沿用站姿的像素比例。默认鲸鱼娘使用偏正面的三分之四行走视角，原始人物层保存在 `design/whale-walk-body.png`；`assets/deepseek-girl-poses.png` 保留作兼容回退。素材使用内置 image_gen 生成，播放采用最近邻缩放。
+裁切帧共享人物中心和脚底基线，趴姿沿用站姿的像素比例。原生 Deep seek 走路复用 `idle.png` 首格的原像素，完整身体与鞋不缩放；`actionSheets` 令行走沿用待机的 397.5 像素比例基准。来源、原始腿鞋图层和重建脚本位于 `design/deepseek-walk-aligned-v1/`；`assets/deepseek-girl-poses.png` 保留作兼容回退。高清鲸鱼娘使用 `rendering: "smooth"`，人物按显示分辨率平滑绘制，像素形态和场景仍采用最近邻缩放。
 
-任务结束后，场景 Worker 与模型请求停止；完成或失败先播放约 1.8 秒反应，再进入本地待机与闲逛。蒸汽、星光、雨滴、波纹等预制小动效由本地时钟继续播放。收起、后台或系统“减少动态效果”会暂停播放。窗口在待机时改变大小只重新布局，不恢复 Worker 的连续运行。
+任务结束后，场景 Worker 与模型请求停止；原生 Deep seek 与高清鲸鱼娘的完成／失败反应播放一秒后进入本地待机与闲逛，其他资源包按对应反应动作的总时长播放。蒸汽、星光、雨滴、波纹等预制小动效由本地时钟继续播放。收起、后台或系统“减少动态效果”会暂停播放。窗口在待机时改变大小只重新布局，不恢复 Worker 的连续运行。
+
+鲸鱼娘形态切换使用 650 毫秒扫描过渡，保留动作时钟与场景；协作进入／退出使用一次 450 毫秒扫描，循环内两个分身持续存在。减少动态效果时跳过扫描。未保存角色选择时加载像素形态，显式原生选择保存为 `default-deepseek`，与未设置的偏好分开处理。
 
 支持行走的导入角色会走动、停留并返回工作位置；缺少行走动作时保持原地。阅读、编辑及真实会话结束状态优先于旧场景的动作意图。资源包制作规则见[本地资源包说明](local-resource-packs.md)。
 

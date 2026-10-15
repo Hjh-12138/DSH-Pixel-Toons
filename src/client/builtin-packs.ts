@@ -5,10 +5,13 @@ import orangeManifest from '../../assets/characters/orange-flower/manifest.json'
 import blueManifest from '../../assets/characters/blue-fan/manifest.json'
 import blondeManifest from '../../assets/characters/blonde-goth/manifest.json'
 import blackManifest from '../../assets/characters/black-beast/manifest.json'
+import whalePixelManifest from '../../assets/characters/whale-dual-pixel/manifest.json'
+import whaleHdManifest from '../../assets/characters/whale-dual-hd/manifest.json'
 
 // Separate IDs preserve users' imported versions and keep bundled updates selectable.
 const definitions=[
   silverManifest,purpleManifest,orangeManifest,blueManifest,blondeManifest,blackManifest,
+  whalePixelManifest,whaleHdManifest,
 ] as const
 const rawIds=new Map<string,string>()
 export const builtinPacks:LocalPack[]=definitions.map(raw=>{

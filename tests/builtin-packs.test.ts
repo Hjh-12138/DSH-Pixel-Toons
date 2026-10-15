@@ -19,9 +19,9 @@ async function withLibrary(run:(library:Library)=>Promise<void>){
 }
 const archive=async(id:string)=>new Blob([await readFile(new URL(`../examples/character-packs/${id.slice('builtin-'.length)}.toons.zip`,import.meta.url))])
 
-test('six named descriptors load selected local Host archives and preserve imported IDs',async()=>withLibrary(async library=>{
-  assert.equal(library.builtinPacks.length,6)
-  assert.deepEqual(library.builtinPacks.map(p=>p.manifest.name),['Kimi','Gemini','Claude','Qwen','Grok','GLM'])
+test('eight named descriptors load selected local Host archives and preserve imported IDs',async()=>withLibrary(async library=>{
+  assert.equal(library.builtinPacks.length,8)
+  assert.deepEqual(library.builtinPacks.slice(0,6).map(p=>p.manifest.name),['Kimi','Gemini','Claude','Qwen','Grok','GLM'])
   let reads=0
   const reader=async(id:string)=>{reads++;return library.builtinArchiveFromResponse(id,await readBuiltinPackArchive(id))}
   assert.equal(reads,0,'descriptors do not fetch or unpack archives eagerly')
@@ -30,17 +30,25 @@ test('six named descriptors load selected local Host archives and preserve impor
     const pack=await library.resolveLibraryPack(descriptor,reader)
     assert.equal(pack.id,descriptor.id);assert.equal(pack.manifest.id,descriptor.id)
     assert.equal(await library.resolveLibraryPack(descriptor,reader),pack)
+    if(descriptor.id.startsWith('builtin-whale-dual-')){
+      const c=pack.manifest.character!
+      assert.equal(Object.keys(c.actions).length,descriptor.id.endsWith('-hd')?13:10)
+      assert.equal(c.rendering,descriptor.id.endsWith('-hd')?'smooth':'pixelated')
+      for(const path of Object.values(c.atlases))assert.ok(pack.assets[path])
+      for(const action of ['walk-left','walk-right'] as const)assert.ok(resolvePackClip(c,action).clip.frames.every(f=>f.durationMs===125))
+      continue
+    }
     assert.ok(pack.assets['walk-left.png'])
     const character=pack.manifest.character!
     checkFrameBounds(character,{core:{width:1024,height:1536},work:{width:1024,height:1536},reaction:{width:1024,height:1536},walk:{width:1024,height:512}})
     const left=resolvePackClip(character,'walk-left'),right=resolvePackClip(character,'walk-right')
-    assert.equal(left.clip.frames.length,8);assert.ok(left.clip.frames.every(f=>f.atlas==='walk'&&f.durationMs===100));assert.ok(right.mirror)
+    assert.equal(left.clip.frames.length,8);assert.ok(left.clip.frames.every(f=>f.atlas==='walk'&&f.durationMs===125));assert.ok(right.mirror)
     for(const action of ['idle','think','search','read','type','check','success','failed'] as const)assert.equal(resolvePackClip(character,action).clip.frames.length,8)
   }
-  assert.equal(reads,6)
+  assert.equal(reads,8)
   const original:LocalPack={...library.builtinPacks[0]!,id:'silver-music'}
-  assert.equal(await library.resolveLibraryPack(original,reader),original);assert.equal(reads,6)
-  assert.equal(library.withBuiltinPacks([original]).length,7);assert.equal(library.withBuiltinPacks([library.builtinPacks[0]!]).length,6)
+  assert.equal(await library.resolveLibraryPack(original,reader),original);assert.equal(reads,8)
+  assert.equal(library.withBuiltinPacks([original]).length,9);assert.equal(library.withBuiltinPacks([library.builtinPacks[0]!]).length,8)
 }))
 
 test('selected builtin loads deduplicate pending work, retry failures and reject another character archive',async()=>withLibrary(async library=>{

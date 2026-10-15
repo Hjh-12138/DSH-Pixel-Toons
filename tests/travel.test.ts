@@ -8,6 +8,18 @@ import type {MascotDraw} from '../src/engine/script'
 import type {Phase} from '../src/engine/library'
 
 const input={delta:.05,playing:true,working:true,phase:'thinking' as Phase,reacting:false,width:720,height:112,home:.52,canWalk:true}
+
+test('a stationary action allows the same explicit walking direction to restart',()=>{
+  const travel=new CharacterTravel()
+  const first=travel.advance({...input,direction:-1})
+  assert.equal(first.walking,true)
+  const stopped=travel.advance({...input,canWalk:false})
+  assert.equal(stopped.walking,false)
+  const resumed=travel.advance({...input,direction:-1})
+  assert.equal(resumed.walking,true)
+  assert.equal(resumed.facing,-1)
+  assert.ok(resumed.x<stopped.x)
+})
 test('waiting alternates real walks and work poses, using all eight walk frames in both directions',()=>{
   const travel=new CharacterTravel(),seen=new Set<string>(),positions=new Set<number>(),frames=new Map<string,Set<number>>()
   let previous=travel.snapshot().x
@@ -96,7 +108,7 @@ test('the renderer draws moving walk sprites at their route position and keeps d
   const g={canvas,clearRect(){},fillRect(){},fillText(){},drawImage(...args:unknown[]){draws.push(args.slice(1) as number[])}} as unknown as CanvasRenderingContext2D
   const frame={cells:new Uint32Array(90*8*3),cols:90,rows:8,t:2,preset:{theme:'studio' as const,mood:'day' as const},mascots:figures}
   for(const x of [.3,.7])paint(g,frame,sheet.image,Array(12).fill(frames[0]!.crop),'reading','none',sprites,{time:0,outcomeAge:0,playing:true,working:true},undefined,{x,walking:true,facing:x<.5?-1:1,seconds:.31})
-  assert.equal(draws[0]![0],400);assert.equal(draws[1]![0],1200)
+  assert.equal(draws[0]![0],200);assert.equal(draws[1]![0],1000)
   assert.ok(draws[1]![4]!>draws[0]![4]!+250)
   assert.equal(canvas.dataset.action,'walk-right');assert.equal(canvas.dataset.theme,'studio')
   assert.equal(canvas.dataset.walking,'true')
@@ -121,7 +133,7 @@ test('walking keeps a planted foot at one floor level without an added whole-bod
  const sheet={image:{} as HTMLImageElement,frames,referenceHeight:100},sprites=animationFixture(sheet)
  const mascot={x:10,py:4,look:{pose:'stand',stride:-1,facing:0,scale:1,arms:{left:'down',right:'down'}}} as MascotDraw
  const frame={cells:new Uint32Array(100*14*3),cols:100,rows:14,t:0,preset:{theme:'studio' as const,mood:'day' as const},mascots:[mascot]}
- for(let i=0;i<8;i++)paint(g,frame,sheet.image,[],'reading','none',sprites,{time:0,outcomeAge:0,playing:true,working:true},undefined,{x:.5,walking:true,facing:1,seconds:i*.075+.001})
+ for(let i=0;i<8;i++)paint(g,frame,sheet.image,[],'reading','none',sprites,{time:0,outcomeAge:0,playing:true,working:true},undefined,{x:.5,walking:true,facing:1,seconds:i*.125+.001})
  assert.equal(new Set(draws.map(d=>d[5]!+d[7]!)).size,1,'the ground must not move as the gait advances')
  assert.deepEqual(draws.map(d=>d[0]),[0,100,200,300,400,500,600,700])
 })

@@ -1,0 +1,307 @@
+{
+  "source": "assets/animations/idle.png",
+  "sourceFrame": {
+    "x": 0,
+    "y": 0,
+    "w": 444,
+    "h": 443
+  },
+  "sourceOffset": {
+    "x": 34,
+    "y": 28
+  },
+  "canvas": [
+    512,
+    512
+  ],
+  "floor": 460,
+  "anchorX": 256,
+  "anchorY": 461,
+  "referenceHeight": 397.5,
+  "sourceBodyHash": "589ec01547ca91deb0cf2e4f7762d457ad1217e9e485c7f88ea8b1374df47fac",
+  "limbs": [
+    {
+      "hipY": 396,
+      "ankleY": 408,
+      "region": [
+        158,
+        396,
+        214,
+        443
+      ]
+    },
+    {
+      "hipY": 396,
+      "ankleY": 408,
+      "region": [
+        216,
+        396,
+        269,
+        443
+      ]
+    }
+  ],
+  "bob": [
+    0,
+    1,
+    0,
+    -1,
+    0,
+    1,
+    0,
+    -1
+  ],
+  "gait": [
+    [
+      [
+        -10,
+        0
+      ],
+      [
+        10,
+        -2
+      ]
+    ],
+    [
+      [
+        -5,
+        0
+      ],
+      [
+        10,
+        -6
+      ]
+    ],
+    [
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        -10
+      ]
+    ],
+    [
+      [
+        5,
+        0
+      ],
+      [
+        -5,
+        -4
+      ]
+    ],
+    [
+      [
+        10,
+        -4
+      ],
+      [
+        -10,
+        0
+      ]
+    ],
+    [
+      [
+        8,
+        -8
+      ],
+      [
+        -5,
+        0
+      ]
+    ],
+    [
+      [
+        0,
+        -10
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    [
+      [
+        -5,
+        -6
+      ],
+      [
+        5,
+        0
+      ]
+    ]
+  ],
+  "frameMs": 125,
+  "frames": [
+    {
+      "frame": 1,
+      "bob": 0,
+      "feet": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          -2
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "960df9d4a23cb76286487e236aaccbf5ea49565b182110529706e204c24512b5",
+      "legHashes": [
+        "d6245421bf7d3847690dd97f2fa6fb147ba0404047b8e0be09f62a7dad5c23c7",
+        "2292538972b8cae24abf39afd98e7aa22a648b992aa3cc294104851d948e1b94"
+      ]
+    },
+    {
+      "frame": 2,
+      "bob": 1,
+      "feet": [
+        [
+          -5,
+          0
+        ],
+        [
+          10,
+          -6
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "b553bb6fe5ae07851e9af0e039aac6f5c61eaee2e104f8165564cfe100a473e0",
+      "legHashes": [
+        "38af1d55b4145a04c32a98d3012999b10990b0d5ba9b6f18ed34f7594f165a40",
+        "ed36b5959b08bd9a3bcf176d8f761c7e1f677182d208c48c222193028be13d2e"
+      ]
+    },
+    {
+      "frame": 3,
+      "bob": 0,
+      "feet": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          -10
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "d73f905420a80ed88c983ce8904fdd965f4747163ba483beb0c2250e83dcf798",
+      "legHashes": [
+        "01ac4f7ef8baa00423a8b7295f84194f71727720aef05dc30559dbd6286425a7",
+        "011eed5e2228f1f4458a3e620496d11a4538f6baa3d7d01ccb560594fab1b9cc"
+      ]
+    },
+    {
+      "frame": 4,
+      "bob": -1,
+      "feet": [
+        [
+          5,
+          0
+        ],
+        [
+          -5,
+          -4
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "9c9eb4d920c381f8177c4209024d5b2479629ee0c082a570534d29a0d1a4651a",
+      "legHashes": [
+        "420960d6b8434e265d413d487a06059e2bf35c9d4e384fd2b7aae39f686df46c",
+        "4cf4b21a03baa6373ddd0b53ef269cff4495ae2fb66f4ffc9e191db5aa51127b"
+      ]
+    },
+    {
+      "frame": 5,
+      "bob": 0,
+      "feet": [
+        [
+          10,
+          -4
+        ],
+        [
+          -10,
+          0
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "a2292ce5fa63ff9509b3b752de9ac38348d4b478bd440638cf0194fd960eae25",
+      "legHashes": [
+        "edc1a55b5aa6635f2bb8fcb0a525719aa078316f6f01104abcc95a1ee4c146a9",
+        "84de4c1e19d29bca2b87d8105b4ea3d55ef4a1d11b9a9590ce0ff41dee7f0ae4"
+      ]
+    },
+    {
+      "frame": 6,
+      "bob": 1,
+      "feet": [
+        [
+          8,
+          -8
+        ],
+        [
+          -5,
+          0
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "30ac863fd2195750c2abffff8a9457fcf0a48e112fdc6d1d28ffe0bfe820981c",
+      "legHashes": [
+        "fa9e24afde468996d0993b25ae3309121f0864b84426a079967a1583201b8ffa",
+        "09605e7e829c13c416e31117cdbb007ae41f55006f13db5fe233716c67eaa3bc"
+      ]
+    },
+    {
+      "frame": 7,
+      "bob": 0,
+      "feet": [
+        [
+          0,
+          -10
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "b3fb5823dbcaa4b4ad3125d04bfc90e2a72a4864157c1b7fb8a2338b8a512d2b",
+      "legHashes": [
+        "f65e02ab4a977c9e94f4594f5650ebe0aeaf818b6c753b0eb2820ba2a534f2fb",
+        "c27d26796688eaee7046a976e07be412da73f24642cbf2446c9cbf9fe7ddfa16"
+      ]
+    },
+    {
+      "frame": 8,
+      "bob": -1,
+      "feet": [
+        [
+          -5,
+          -6
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "contacts": 17,
+      "bodyPixels": 121,
+      "rgbaHash": "0c8d2ad473cd269d9692f17ad3920283bc81e27ae15a596dcaea18554642878c",
+      "legHashes": [
+        "b631e2b59ae7b50ac95a858d76ed204d5026d736ce4c6724370658485e5d84fe",
+        "06de61c67c433bf79aadaa22dc5787287941dda877039ff636ff43c93e7823e1"
+      ]
+    }
+  ]
+}

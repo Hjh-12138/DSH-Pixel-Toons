@@ -22,7 +22,7 @@ test('completion reveals fireworks only in its final two frames and clears them 
  const mascot={x:10,py:4,look:{pose:'stand',stride:-1,facing:0,scale:1,arms:{left:'down',right:'down'}}} as MascotDraw
  const cells=new Uint32Array(90*14*3);for(let i=0;i<90*14;i++){cells[i*3+1]=0x01000000;cells[i*3+2]=0x01000000}
  const frame={cells,cols:90,rows:14,t:0,mascots:[mascot]}
- for(const [time,expected] of [[.5,undefined],[.75,'ignition'],[1.1,'bloom']] as const){paint(g,frame,sheet.image,[],'editing','success',sprites,{time,outcomeAge:time,playing:true,working:false});assert.equal(canvas.dataset.celebration,expected)}
+ for(const [time,expected] of [[.5,undefined],[.75,'ignition'],[.875,'bloom']] as const){paint(g,frame,sheet.image,[],'editing','success',sprites,{time,outcomeAge:time,playing:true,working:false});assert.equal(canvas.dataset.celebration,expected)}
  paint(g,frame,sheet.image,[],'editing','success',sprites,{time:2,outcomeAge:2,playing:true,working:false});assert.equal(canvas.dataset.action,'idle');assert.equal(canvas.dataset.celebration,undefined)
 })
 test('a mirrored final pose preserves the same character root before drawing the bloom',()=>{
@@ -33,6 +33,6 @@ test('a mirrored final pose preserves the same character root before drawing the
  const sheet={image:{} as HTMLImageElement,frames,referenceHeight:100},sprites=animationFixture(sheet)
  const mascot={x:10,py:4,look:{pose:'stand',stride:-1,facing:0,scale:1,arms:{left:'down',right:'down'}}} as MascotDraw
  const cells=new Uint32Array(90*14*3);for(let i=0;i<90*14;i++){cells[i*3+1]=0x01000000;cells[i*3+2]=0x01000000}
- paint(g,{cells,cols:90,rows:14,t:0,mascots:[mascot]},sheet.image,[],'editing','success',sprites,{time:1.1,outcomeAge:1.1,playing:true,working:false})
+ paint(g,{cells,cols:90,rows:14,t:0,mascots:[mascot]},sheet.image,[],'editing','success',sprites,{time:.875,outcomeAge:.875,playing:true,working:false})
  assert.deepEqual(scales,[[-1,1]]);assert.equal(translations.length,1);assert.equal(canvas.dataset.celebration,'bloom')
 })
