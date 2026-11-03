@@ -1,6 +1,6 @@
 # 开发与渲染说明
 
-本文记录 DeepSeek Toons 0.1.27 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
+本文记录 DeepSeek Toons 0.1.28 源码的实现细节。已发布安装包与环境要求见[中文 README](../README.md#快速开始)，版本变化见[CHANGELOG](../CHANGELOG.md)。
 
 鲸鱼娘双形态的可编辑分层、关节与重建命令见[人物源工程与一致性验收](../design/whale-source/README.md)。`npm run characters:check` 输出双形态总览、八帧展开和检查结果；`npm run characters:review` 提供逐帧拖动对比页；`npm run characters:rebuild` 从归档图层生成高清候选，并对照已确认素材，不覆盖正式图集。
 
@@ -22,16 +22,16 @@ npm exec -- dsh --profile web
 
 ## 桌面 CLI 安装
 
-先打开一次桌面应用，再完全退出它；下载 Release 包后，将两个路径替换为自己的实际位置：
+先打开一次桌面应用，再完全退出它；按上一节构建 v0.1.28 安装包后，将两个路径替换为自己的实际位置：
 
 ```powershell
 $desktopCli = 'C:\实际安装目录\resources\runtime\cli\bin\dsh.cmd'
-$packagePath = 'C:\实际下载目录\dsh-toons-0.1.24.tgz'
+$packagePath = 'C:\实际构建目录\dist\dsh-toons-0.1.28.tgz'
 & $desktopCli --version
 & $desktopCli plugin --profile desktop add "$packagePath"
 ```
 
-CLI 应显示 `0.2.0-rc.2`。安装后重新打开应用；也可直接在内置插件管理中添加本地包。
+CLI 应显示 `0.2.1-rc.5`。安装后重新打开应用；也可直接在内置插件管理中添加本地包。
 
 ## 构建与动作预览
 

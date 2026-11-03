@@ -9,23 +9,34 @@
   <img src="design/screenshots/character-walks-v0124.gif" width="49%" alt="Six characters walking" />
 </p>
 
-**Requirements:** DeepSeek Harness `0.2.0-rc.2`. Only Windows Web and Desktop clients have been verified. Desktop uses its bundled runtime; Web commands require Node.js `22.19.0` or later (locally verified with `24.12.0`) and npm. Source development also requires Git.
+**Requirements:** DeepSeek Harness `0.2.1-rc.5`. Only Windows Web and Desktop clients have been verified. Desktop uses its bundled runtime; Web commands require Node.js `22.19.0` or later (locally verified with `24.12.0`) and npm. Source development also requires Git.
 
 ## Quick start
 
-**[Download dsh-toons-0.1.24.tgz](https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/download/v0.1.24/dsh-toons-0.1.24.tgz)** · [Release and checksum](https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/tag/v0.1.24)
+v0.1.28 supports Harness `0.2.1-rc.5`. Build its package from source; the historical [v0.1.24 release](https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/tag/v0.1.24) requires Harness `0.2.0-rc.2`.
 
-For Desktop, open the app once, add the downloaded `.tgz` in its plugin manager, enable `dsh-toons`, then fully quit and reopen. Keep the installed tarball: the profile may still reference its local path. No source build is needed.
-
-For Web, with Node.js and npm installed, stop any existing Web service and run these three PowerShell commands:
+With Node.js and Git installed, run these PowerShell commands:
 
 ```powershell
-npm install --global pnpm @deepseek-ai/dsh@0.2.0-rc.2
-dsh plugin --profile web add "https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/download/v0.1.24/dsh-toons-0.1.24.tgz"
-dsh --profile web
+git clone https://github.com/Hjh-12138/DSH-Pixel-Toons.git
+Set-Location -LiteralPath .\DSH-Pixel-Toons
+npm ci
+New-Item -ItemType Directory -Force -Path .\dist | Out-Null
+npm pack --pack-destination .\dist
 ```
 
-The second command downloads and installs the Release directly. Continue only after each command succeeds. Existing users with the matching CLI and pnpm can skip the first command. Source build and Desktop CLI instructions are in the [development guide](docs/development.md).
+For Desktop, verify the app runs Harness `0.2.1-rc.5`, add `dist/dsh-toons-0.1.28.tgz` in its plugin manager, enable `dsh-toons`, then fully quit and reopen. Keep the installed tarball: the profile may still reference its local path.
+
+For Web, stop the existing service, then run from the source directory:
+
+```powershell
+npm install --global pnpm
+$packagePath = (Resolve-Path -LiteralPath .\dist\dsh-toons-0.1.28.tgz).Path
+npm exec -- dsh plugin --profile web add "$packagePath"
+npm exec -- dsh --profile web
+```
+
+Continue only after each command succeeds. Existing source checkouts can first run `git pull --ff-only`. After upgrading Harness, reinstall dependencies and rebuild the package; an old tarball does not gain compatibility automatically. Desktop CLI instructions are in the [development guide](docs/development.md).
 
 ## Features and privacy
 
@@ -37,7 +48,7 @@ The second command downloads and installs the Release directly. Continue only af
 - Thumbnail character cards group both whale-girl forms under one character. Full artwork loads on demand and decoded images are reused across form/background changes.
 - Optional dynamic mode generates Chinese text bubbles and combines existing scene assets, with fallback and separate token accounting.
 
-The 0.1.27 source includes the dual forms, matching pixel work actions, and the revised native Deep seek walk. The public download above remains the 0.1.24 release; use the [source installation guide](docs/development.md#从源码安装) to build the new version. Historical screenshots retain their original version labels.
+The 0.1.28 source includes the dual forms, matching pixel work actions, and the revised native Deep seek walk. It also updates compatibility for Harness 0.2.1-rc.5; use the [source installation guide](docs/development.md#从源码安装) to build the new version. Historical screenshots retain their original version labels.
 
 > [!IMPORTANT]
 > **Dynamic mode sends task summaries to your configured model and adds model usage.** Summaries may include tool names, paths, commands, search terms, URLs or a short excerpt of user input. Default preset mode plays locally and makes no extra model requests for the animation.
@@ -58,7 +69,7 @@ The current source reduces the install tarball from about 117 MB to 52 MB, and t
 
 ## Troubleshooting and uninstall
 
-If the strip is missing, check the selected profile, plugin enablement and `enabled: true`, then restart the client or expand the collapsed strip. `pnpm was not found` means pnpm must be available on PATH. Compatibility failures may report `incompatible-version` or peer dependency errors; use Harness `0.2.0-rc.2` for the actual client as well as the CLI.
+If the strip is missing, check the selected profile, plugin enablement and `enabled: true`, then restart the client or expand the collapsed strip. `pnpm was not found` means pnpm must be available on PATH. Compatibility failures may report `incompatible-version` or peer dependency errors; use Harness `0.2.1-rc.5` for the actual client as well as the CLI.
 
 If Desktop auto-update is enabled, unregister its task first:
 
@@ -66,10 +77,10 @@ If Desktop auto-update is enabled, unregister its task first:
 Unregister-ScheduledTask -TaskName DSH-Toons-AutoUpdate -Confirm:$false
 ```
 
-For Web, stop the service and use the CLI installed in Quick start:
+For Web, stop the service and run from the source directory using the CLI installed in Quick start:
 
 ```powershell
-dsh plugin --profile web remove dsh-toons
+npm exec -- dsh plugin --profile web remove dsh-toons
 ```
 
 For Desktop, remove `dsh-toons` in the plugin manager. Restart afterwards. Removing the plugin does not clear locally imported resources.

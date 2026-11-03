@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/tag/v0.1.24"><img src="https://img.shields.io/badge/version-0.1.24-blue" alt="下载 0.1.24 安装包" /></a>
-  <img src="https://img.shields.io/badge/Harness-0.2.0--rc.2-527aaa" alt="Harness 0.2.0-rc.2" />
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/source-0.1.28-blue" alt="源码版本 0.1.28" /></a>
+  <img src="https://img.shields.io/badge/Harness-0.2.1--rc.5-527aaa" alt="Harness 0.2.1-rc.5" />
   <img src="https://img.shields.io/badge/verified-Windows-0078d4" alt="目前仅验证 Windows" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT 代码许可证" /></a>
 </p>
@@ -25,13 +25,13 @@
   <a href="#常见问题">常见问题</a>
 </p>
 
-**运行环境：DeepSeek Harness `0.2.0-rc.2`；目前仅验证 Windows 的 Web 与桌面客户端。** 桌面安装使用应用自带运行时；Web 命令安装需 Node.js 至少 `22.19.0`（本地验证 `24.12.0`）和 npm。源码开发另需 Git。下列命令使用 PowerShell；桌面自动升级依赖 Windows 任务计划程序。macOS／Linux 尚未验证。
+**运行环境：DeepSeek Harness `0.2.1-rc.5`；目前仅验证 Windows 的 Web 与桌面客户端。** 桌面安装使用应用自带运行时；Web 命令安装需 Node.js 至少 `22.19.0`（本地验证 `24.12.0`）和 npm。源码开发另需 Git。下列命令使用 PowerShell；桌面自动升级依赖 Windows 任务计划程序。macOS／Linux 尚未验证。
 
 ## 动画预览
 
 阅读时趴着翻书，写代码时敲键盘；思考、搜索、检查和任务完成都有对应动作。
 
-0.1.27 源码提供鲸鱼娘「像素／高清」双形态，点击按钮以科幻扫描光切换。两种形态使用对应人物与姿势，测试、构建、Git 和双分身协作各有独立动作；默认蓝眼 Deep seek 的小步行走也与原待机比例对齐。当前公开安装包仍见下方 0.1.24 Release；体验源码中的新动作可按[开发说明](docs/development.md#从源码安装)构建安装。
+0.1.28 源码提供鲸鱼娘「像素／高清」双形态，点击按钮以科幻扫描光切换。两种形态使用对应人物与姿势，测试、构建、Git 和双分身协作各有独立动作；默认蓝眼 Deep seek 的小步行走也与原待机比例对齐。0.1.28 适配 Harness 0.2.1-rc.5；请按[开发说明](docs/development.md#从源码安装)构建安装。
 
 12 个像素主题、24 个日光／暮色版本，包含书阁、工坊、鲸鱼港湾与游戏致敬场景。默认预制模式直接播放本地素材，无额外模型调用。
 
@@ -43,27 +43,42 @@
 
 ## 快速开始
 
-**[下载 dsh-toons-0.1.24.tgz](https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/download/v0.1.24/dsh-toons-0.1.24.tgz)** · [查看 Release 与校验值](https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/tag/v0.1.24)
+v0.1.28 适配 Harness `0.2.1-rc.5`，请从源码构建安装包。历史 [v0.1.24 Release](https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/tag/v0.1.24) 仅适用于 Harness `0.2.0-rc.2`。
 
-### 桌面：下载后直接导入
+### 构建安装包
 
-1. 打开一次 DeepSeek Harness 桌面端，确认 Harness 版本为 `0.2.0-rc.2`。
-2. 在内置插件管理中添加下载的 `.tgz` 本地包，并启用 `dsh-toons`。
-3. 完全退出并重新打开应用，动画会出现在聊天输入框上方。
-
-桌面安装无需克隆源码或运行构建命令。请保留下载的安装包，profile 可能继续引用本地路径。桌面用户可另行启用 [Windows 自动升级](docs/desktop-auto-update.md)。
-
-### Web：三条命令
-
-已有 Node.js 和 npm 后，停止原 Web 服务，在 PowerShell 中依次运行：
+安装 Node.js、Git 后，在 PowerShell 中依次运行：
 
 ```powershell
-npm install --global pnpm @deepseek-ai/dsh@0.2.0-rc.2
-dsh plugin --profile web add "https://github.com/Hjh-12138/DSH-Pixel-Toons/releases/download/v0.1.24/dsh-toons-0.1.24.tgz"
-dsh --profile web
+git clone https://github.com/Hjh-12138/DSH-Pixel-Toons.git
+Set-Location -LiteralPath .\DSH-Pixel-Toons
+npm ci
+New-Item -ItemType Directory -Force -Path .\dist | Out-Null
+npm pack --pack-destination .\dist
 ```
 
-第二条命令直接下载并安装 Release 附件，无需 `dist`、Git 或自行打包。每条命令成功后再继续。已有匹配版本的 CLI 与 pnpm 可跳过第一条；连接或安装问题见[常见问题](#常见问题)。完整源码构建及桌面 CLI 安装步骤见[开发说明](docs/development.md)。
+已有源码目录可先运行 `git pull --ff-only`。升级 Harness 后需重新安装依赖并构建；旧安装包不会自动获得新版兼容性。
+
+### 桌面：导入安装包
+
+1. 确认桌面端 Harness 版本为 `0.2.1-rc.5`。
+2. 在内置插件管理中添加构建的 `dist/dsh-toons-0.1.28.tgz`，并启用 `dsh-toons`。
+3. 完全退出并重新打开应用，动画会出现在聊天输入框上方。
+
+请保留安装包，profile 可能继续引用本地路径。桌面用户可另行启用 [Windows 自动升级](docs/desktop-auto-update.md)。
+
+### Web：安装并启动
+
+停止原 Web 服务，在源码目录中运行：
+
+```powershell
+npm install --global pnpm
+$packagePath = (Resolve-Path -LiteralPath .\dist\dsh-toons-0.1.28.tgz).Path
+npm exec -- dsh plugin --profile web add "$packagePath"
+npm exec -- dsh --profile web
+```
+
+每条命令成功后再继续。完整源码构建及桌面 CLI 安装步骤见[开发说明](docs/development.md)。
 
 ## 功能亮点
 
@@ -157,11 +172,11 @@ npm run preview
 
 ### 提示找不到 dsh、pnpm 或安装包？
 
-Release 安装请先完成 Web 快速开始中的第一条命令，并重新打开 PowerShell 检查 PATH；桌面端可直接使用内置插件管理。出现 `pnpm was not found` 时用 `pnpm --version` 检查安装。下载失败时可从 Release 页面手动保存 `.tgz`，安装时填写其完整本地路径。源码安装的 `npm exec -- dsh ...` 必须在已运行 `npm ci` 的项目目录中执行。
+先在项目目录运行 `npm ci`，再通过 `npm exec -- dsh ...` 使用匹配版本的 CLI。出现 `pnpm was not found` 时运行 `npm install --global pnpm`，并用 `pnpm --version` 检查 PATH。找不到安装包时，先按快速开始运行 `npm pack`，确认 `dist/dsh-toons-0.1.28.tgz` 存在，并使用完整本地路径；桌面端可通过内置插件管理导入该包。
 
 ### Harness 版本不匹配会怎样？
 
-本项目的 Harness peer 依赖固定为 `0.2.0-rc.2`。插件管理可能返回 `incompatible-version`，CLI 可能显示 `plugin command failed; diagnostics: ...`，包管理器也可能显示 peer dependency 冲突。先核对实际客户端与 CLI 的版本，使用匹配版本后重试；仅升级项目依赖中的 CLI 不会升级桌面应用。
+本项目的 Harness peer 依赖固定为 `0.2.1-rc.5`。插件管理可能返回 `incompatible-version`，CLI 可能显示 `plugin command failed; diagnostics: ...`，包管理器也可能显示 peer dependency 冲突。先核对实际客户端与 CLI 的版本，使用匹配版本后重试；仅升级项目依赖中的 CLI 不会升级桌面应用。
 
 ### 动态模式没有气泡，或提示回退？
 
@@ -178,7 +193,7 @@ Unregister-ScheduledTask -TaskName DSH-Toons-AutoUpdate -Confirm:$false
 没有启用自动升级则跳过上一步。停止 Web 服务后，使用快速开始中安装的 CLI 卸载 Web profile 的插件：
 
 ```powershell
-dsh plugin --profile web remove dsh-toons
+npm exec -- dsh plugin --profile web remove dsh-toons
 ```
 
 桌面端可在内置插件管理中移除 `dsh-toons`，或完全退出应用后，用[开发说明](docs/development.md#桌面-cli-安装)中设置的 `$desktopCli` 运行：
